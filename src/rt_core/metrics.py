@@ -1,0 +1,44 @@
+from .core_actions import BadAction, TradeAction
+
+
+class MetricCollector:
+    """Собирает статистику по процессу торгов"""
+    BASIC_METRICS = ["Trades", "TotalReward", "Balance", "Penalties", "Rewards", "PosTrades", "NegTrades"]
+
+    def __init__(self, enabled=True):
+        self.metrics = dict()
+        self.enabled = enabled
+        self.reset()
+
+    def process(self, reward, action_result):
+        self.save_metric("TotalReward", val=reward)
+
+        if isinstance(action_result, BadAction):
+            self.save_metric("Penalties")
+
+        if isinstance(action_result, TradeAction) and not action_result.is_open:
+            self.save_trade(action_result.profit)
+
+    def save_trade(self, balance):
+        self.save_metric("Trades")
+        self.save_metric("Balance", val=balance)
+        if balance >= 0:
+            self.save_metric("PosTrades")
+        else:
+            self.save_metric("NegTrades")
+
+    def save_metric(self, key, val=1):
+        if key not in self.metrics.keys():
+            self.metrics[key] = val
+        else:
+            self.metrics[key] += val
+
+    def get_metric(self, metric):
+        metric_value = self.metrics.get(metric, 0)
+        return metric_value
+
+    def get_metrics(self):
+        return self.metrics
+
+    def reset(self):
+        self.metrics = {key: 0 for key in self.BASIC_METRICS}
