@@ -1,10 +1,9 @@
-# Basic application
+# Reinforcement learning train/trade core
 ## Description
-This package was created to run my applications on the current Reinforcement Learning project.
-The BasicApplication class implements the entry point for the program and provides the actual application configuration. It also simplifies logging setup.
+This package provides trading functionality for train and live trading.
 
 ## Installation
-``pip install git+https://zosimovaa@bitbucket.org/zosimovaa/basic_application.git``
+``pip install git+https://zosimovaa@bitbucket.org/zosimovaa/rt_core.git``
 
 ## Contacts
 - **e-mail**: lesha.spb@gmail.com

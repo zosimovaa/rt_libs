@@ -1,6 +1,11 @@
+import logging
 import numpy as np
+
 from .core_actions import BadAction
 
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 class Ticker:
     """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции"""
@@ -17,14 +22,15 @@ class Ticker:
     }
 
     def __init__(self, context, trade_controller, penalty=-2, reward=0):
-
         self.context = context
+        self.trade_controller = trade_controller
         self.penalty = penalty
         self.reward = reward
-        self.trade_controller = trade_controller
+        logger.info("Initialized with penalty {0} and reward {1}.".format(penalty, reward))
 
     def reset(self):
         self.trade_controller.reset()
+        logger.warning("Reset")
 
     def apply_action(self, action):
         ts = self.context.get("ts")
@@ -42,6 +48,7 @@ class Ticker:
     def _get_penalty(self, val=None):
         """Расчет штрафа. Если штрафне задан явно, то берем из базового значения"""
         value = self.penalty if val is None else val
+        logger.debug("_get_penalty(): -> {0}".format(value))
         return value
 
     def _action_waiting(self, ts, is_open):

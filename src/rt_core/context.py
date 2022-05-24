@@ -1,3 +1,9 @@
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+
+
 class Context:
     def __init__(self, market_fee=0):
         self.data_point = None

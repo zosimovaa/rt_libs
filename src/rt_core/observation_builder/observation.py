@@ -1,6 +1,11 @@
+import logging
 import numpy as np
 from collections import deque
 from abc import ABC, abstractmethod
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 
 class ObservationBuilderInterface(ABC):
