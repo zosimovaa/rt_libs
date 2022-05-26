@@ -4,7 +4,6 @@ from .core_actions import BadAction, TradeAction
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 
 class MetricCollector:

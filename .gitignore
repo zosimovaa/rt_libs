@@ -1,3 +1,7 @@
 .idea
-src/rt_core/__pycache__
-src/rt_core/observation_builder/__pycache__
+src/core/__pycache__
+src/core/observation_builder/__pycache__
+src/core/market_providers/__pycache__
+src/dataset_tools/__pycache__
+src/train_tools/__pycache__
+src/train_tools/sandbox/.ipynb_checkpoints

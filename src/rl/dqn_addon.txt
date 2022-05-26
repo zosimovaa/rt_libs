@@ -1,0 +1,40 @@
+import tensorflow as tf
+from tensorflow.python.keras.layers import Dense, LSTM, Input, Flatten, Conv1D, MaxPool1D, Concatenate, AveragePooling1D
+from tensorflow.python.keras.optimizers import
+from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.models import load_model
+
+
+def create_q_model(env):
+    dim_static_feats = env.observation_space[0]
+    num_actions = env.action_space
+    # ----------------------------------------------
+    inp_static = Input(shape=(dim_static_feats,))
+
+    classif = Dense(16, activation=ACTIVATION)(inp_static)
+    output = Dense(num_actions, activation='softmax')(classif)
+
+    model = Model(inputs=inp_static, outputs=output)
+    return model
+
+
+dqn_conf = {
+    "gamma": 0.99,  # Discount factor for past rewards
+    "epsilon_min": 0.01,  # Minimum epsilon greedy parameter
+    "epsilon_max": 1.0,  # Maximum epsilon greedy parameter
+    "max_steps_per_episode": 10000,
+    "batch_size": 32,  # Size of batch taken from replay buffer
+
+    "optimizer": tf.keras.optimizers.Adam(learning_rate=0.00025, clipnorm=1.0),
+    "loss_function": tf.keras.losses.Huber(),
+    # "loss_function": tf.keras.losses.CategoricalCrossentropy(),
+
+    "epsilon_random_frames": 5000,
+    "epsilon_greedy_frames": 200000,
+    "max_memory_length": 10000,
+    "update_after_actions": 4,
+    "update_target_network": 1000,
+
+}
+

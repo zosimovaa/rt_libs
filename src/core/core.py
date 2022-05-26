@@ -23,7 +23,7 @@ class CoreFacadeInterface(ABC):
 
     @abstractmethod
     def reset(self, data_point=None):
-        """Сброс rt_core в исходное состояние"""
+        """Сброс core в исходное состояние"""
         pass
 
     @abstractmethod
@@ -77,7 +77,7 @@ class CoreFacade:
     @with_exception(CoreError)
     def get_observation(self, data_point=None):
         self.context.update_datapoint(data_point)
-        # todo внедрить статус в процессы rt_core
+        # todo внедрить статус в процессы core
         self.context.set("status", "ok")
         observation = self.observation.get()
         self.context.set("observation_builder", observation, domain="Data")

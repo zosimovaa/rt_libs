@@ -1,0 +1,26 @@
+import tensorflow as tf
+from tensorflow.python.keras.layers import Dense, LSTM, Input, Flatten, Conv1D, MaxPool1D, Concatenate, AveragePooling1D
+from keras.optimizers import Adam
+models import Model
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.models import load_model
+
+def create_q_model(env):
+    dim_static_feats = env.observation_space[0]
+    num_actions = env.action_space
+    #---------------------------------------
+    inp_static = Input(shape=(dim_static_feats,))
+
+    classif = Dense(16, activation=ACTIVATION)(inp_static)
+    output = Dense(num_actions, activation='softmax')(classif)
+
+    model = Model(inputs=inp_static, outputs=output)
+
+    return model
+
+params = {
+    "gamma"        : 0.95,      # decay rate of past observations
+    "alpha"        : 1e-4,      # learning rate in the policy gradient
+    "learning_rate": 0.01,      # learning rate in deep learning
+}
+#=======================================================================================

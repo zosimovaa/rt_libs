@@ -5,7 +5,7 @@ from .core_actions import BadAction
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+
 
 class Ticker:
     """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции"""
