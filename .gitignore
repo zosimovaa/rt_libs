@@ -5,3 +5,6 @@ src/core/market_providers/__pycache__
 src/dataset_tools/__pycache__
 src/train_tools/__pycache__
 src/train_tools/sandbox/.ipynb_checkpoints
+src/rl/__pycache__
+src/env/__pycache__
+src/env/logs

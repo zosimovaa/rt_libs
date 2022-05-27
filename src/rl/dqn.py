@@ -1,26 +1,29 @@
-from datetime import datetime
-import tensorflow as tf
-import numpy as np
 import time
+import numpy as np
+import tensorflow as tf
+from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DQN:
     def __init__(self, env, model, model_target, dqn_params):
         self.env = env
 
-        # todo убрать явную зависимость
+        # todo убрать зависимость
         self.env.live_train_plot.init_plot()
 
         self.model = model
         self.model_target = model_target
         
         # Configuration parameters for the whole setup
-        self.gamma = dqn_params["gamma"]                # Discount factor for past rewards
-        self.epsilon = dqn_params["epsilon"]            # Epsilon greedy parameter
-        self.epsilon_min = dqn_params["epsilon_min"]    # Minimum epsilon greedy parameter
-        self.epsilon_max = dqn_params["epsilon_max"]    # Maximum epsilon greedy parameter
-        self.epsilon_interval = (self.epsilon_max - self.epsilon_min)  # Rate at which to reduce chance of random action being taken
-        self.batch_size = dqn_params["batch_size"]      # Size of batch taken from replay buffer
+        self.gamma = dqn_params["gamma"]                                    # Discount factor for past rewards
+        self.epsilon = dqn_params["epsilon"]                                # Epsilon greedy parameter
+        self.epsilon_min = dqn_params["epsilon_min"]                        # Minimum epsilon greedy parameter
+        self.epsilon_max = dqn_params["epsilon_max"]                        # Maximum epsilon greedy parameter
+        self.epsilon_interval = (self.epsilon_max - self.epsilon_min)       # Rate at which to reduce chance of random action being taken
+        self.batch_size = dqn_params["batch_size"]                          # Size of batch taken from replay buffer
         self.max_steps_per_episode = dqn_params["max_steps_per_episode"]
 
         self.num_actions = env.action_space
@@ -54,7 +57,7 @@ class DQN:
 
     def _sample_transformer(self, state):
         """
-        :param state: текущий стейт может быть np.ndarray или list. Если list - значит работаем с multiple imput
+        :param state: текущий стейт может быть np.ndarray или list. Если list - значит работаем с multiple input
         :return:
         """
         new_state = []
@@ -71,7 +74,7 @@ class DQN:
         return new_state
 
     def _batch_transformer(self, samples):
-        """Если у нас одноярусный вход - будет передан np.ndarray, для multiple input на вход будет передан list of np.ndarray"""
+        """Текущий стейт может быть np.ndarray или list. Если list - значит работаем с multiple input"""
         n = len(samples)
         output = []
         if isinstance(self.env.observation_space, list):
@@ -79,18 +82,12 @@ class DQN:
             for i in range(len(samples[0])):
                 shape = np.array(samples)[:, i][0].shape
                 sample = np.vstack(np.array(samples)[:, i]).reshape(n, *shape)
-                #print(sample[0].dtype)
                 output.append(sample)
         else: 
             #single input
             shape = np.array(samples)[0].shape
             new_shape = [n, *shape]
-            #output = np.vstack(np.array(samples).reshape(new_shape))
             output = np.array(samples).reshape(new_shape)
-
-        #for i in range(len(output)):
-        #    output[i] = output[i].astype(np.float32)
-
         return output  
         
     def reset(self):
@@ -99,11 +96,11 @@ class DQN:
     def train(self, goal_reward=None, max_frames=None):
         tm_start = time.time()
         
-        while True:  # Run until solved
+        while True:  # Run until solved or reach max_frames
             state = np.array(self.env.reset())
             episode_reward = 0
 
-            for timestep in range(1, self.max_steps_per_episode):
+            for time_step in range(1, self.max_steps_per_episode):
                 self.frame_count += 1
 
                 # Use epsilon-greedy for exploration
@@ -131,6 +128,7 @@ class DQN:
                 state_next, reward, done, _ = self.env.step(action)
                 state_next = np.array(state_next)
 
+                # todo подумать над вынесением всего этого в env. Тут так часто обновять не нужно.
                 self.env.render() #; Adding this line would show the attempts
                 # of the agent in a pop up window.
 
@@ -166,7 +164,7 @@ class DQN:
 
                     # Build the updated Q-values for the sampled future states
                     # Use the target model for stability
-                    future_rewards = self.model_target.predict(state_next_sample)
+                    future_rewards = self.model_target(state_next_sample)
                     # Q value = reward + discount factor * expected future reward
                     updated_q_values = rewards_sample + self.gamma * tf.reduce_max(
                         future_rewards, axis=1
@@ -195,26 +193,12 @@ class DQN:
                 if self.frame_count % self.update_target_network == 0:
                     # update the the target network with new weights
                     self.model_target.set_weights(self.model.get_weights())
+
                     # Log details
-                    tm_end = time.time()
-                    tm_now = datetime.now().strftime("%H:%M:%S")
-
-                    # Todo вынести в отдельный метод
-                    template = "{} ({} sec) | reward: {:.2f} at episode {}, frame count {}, epsilon: {:.2f}, loss:{:.2f}"
-
-                    print(template.format(
-                        tm_now, 
-                        int(tm_end-tm_start),
-                        self.running_reward, 
-                        self.episode_count, 
-                        self.frame_count, 
-                        self.epsilon, 
-                        np.mean(self.loss_history)
-                        )
-                    )
+                    self.log(tm_start)
+                    tm_start = time.time()
 
                     self.loss_history = []
-                    tm_start = time.time()
 
                 # Limit the state and reward history
                 if len(self.rewards_history) > self.max_memory_length:
@@ -235,10 +219,27 @@ class DQN:
 
             self.episode_count += 1
 
-            if goal_reward is not None and self.running_reward >=goal_reward:  # Condition to consider the task solved
+            if goal_reward is not None and self.running_reward >= goal_reward:  # Condition to consider the task solved
                 print("Solved at episode {}!".format(self.episode_count))
                 break
 
             if max_frames is not None and self.frame_count >= max_frames:
                 print("Frame {} was reached!".format(self.frame_count))
                 break
+
+    def log(self, tm_start):
+        tm_end = time.time()
+        tm_now = datetime.now().strftime("%H:%M:%S")
+
+        template = "{} ({} sec) | reward: {:>5.2f} at episode {}, frame count {}, epsilon: {:.2f}, loss:{:.2f}"
+        message = template.format(
+            tm_now,
+            int(tm_end - tm_start),
+            self.running_reward,
+            self.episode_count,
+            self.frame_count,
+            self.epsilon,
+            np.mean(self.loss_history)
+        )
+
+        logger.warning(message)

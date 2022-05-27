@@ -8,6 +8,8 @@ import logging
 from abc import ABC, abstractmethod
 from basic_application import with_exception
 
+logger = logging.getLogger(__name__)
+
 
 class CoreError(Exception):
     pass

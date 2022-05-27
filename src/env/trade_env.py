@@ -1,61 +1,11 @@
 import logging
-import os
 import gym
 import numpy as np
-import time
-from train_tools import LiveTrainPlot
+from .log_setup import logger_factory
 
-logging.basicConfig(level=logging.INFO)
+from train_tools.live_train_plot import LiveTrainPlot
 
-
-def with_debug_time(func):
-    def wrapper(*args, **kwargs):
-        t0 = time.time()
-        result = func(*args, **kwargs)
-        t1 = time.time()
-        print("{0:<15} | Exec time : {1:.8}".format(func.__name__, t1 - t0))
-        return result
-
-    return wrapper
-
-
-def set_file_handler(logger, file_name, log_dir="logs"):
-    for handler in logger.handlers[:]:  # remove the existing file handlers
-        if isinstance(handler, logging.FileHandler):
-            logger.removeHandler(handler)
-
-    log_path = os.path.join(os.getcwd(), log_dir)
-    if not os.path.exists(log_dir):
-        os.makedirs(log_path)
-    full_path = os.path.join(log_path, file_name + '.log')
-
-    file_handler = logging.FileHandler(full_path, mode='w')
-    file_handler.setLevel(logging.WARNING)
-    formatter = logging.Formatter('%(message)s')
-    file_handler.setFormatter(formatter)
-
-    logger.addHandler(file_handler)  # set the new handler
-
-    full_path = os.path.join(log_path, file_name + '_by_steps' + '.log')
-    file_handler_d = logging.FileHandler(full_path, mode='w')
-    file_handler_d.setLevel(logging.INFO)
-    file_handler_d.setFormatter(formatter)
-    logger.addHandler(file_handler_d)  # set the new handler
-
-    return logger
-
-
-def obs_to_string(observation):
-    if isinstance(observation, list):
-        obs_formatted = []
-        for obs in observation:
-            obs_formatted.append(np.array2string(obs, max_line_width=500, precision=8, separator=',',
-                                                 suppress_small=True).replace("\n", " | "))
-        obs_formatted = "; ".join(map(str, obs_formatted))
-    else:
-        obs_formatted = np.array2string(observation, max_line_width=500, precision=8, separator=',',
-                                        suppress_small=True).replace("\n", " | ")
-    return obs_formatted
+logger = logging.getLogger("env")
 
 
 class TradeEnv(gym.Env):
@@ -74,12 +24,17 @@ class TradeEnv(gym.Env):
 
         self.step_info = dict()
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.propagate = False
-        self.logger = set_file_handler(self.logger, self.core.alias)
+        self.logger_episode = logger_factory("episode", self.core.alias)
+        self.logger_step = logger_factory("step", self.core.alias)
+
+        self.logger_step.info("info")
+        self.logger_step.warning("warning")
+        self.logger_step.error("error")
 
         metrics = self.core.get_metrics()
-        self.logger.warning(";".join(metrics.keys()))
+        self.logger_episode.warning(";".join(metrics.keys()))
+
+        logger.warning("Observation space {}".format(self.observation_space))
 
     @property
     def action_space(self):
@@ -99,6 +54,8 @@ class TradeEnv(gym.Env):
         metrics = self.core.get_metrics()
         self.log_episode_result(metrics)
         self.live_train_plot.update_plot(metrics)
+
+        self.logger_step.warning("New episode -------------------------------")
 
         # Сброс датасета и подготовка наблюдения
         self.episode += 1
@@ -124,14 +81,16 @@ class TradeEnv(gym.Env):
                   "Balance: {balance:<8.3f} |---| [{observation}]"
 
         message = message.format(**self.step_info)
-        self.logger.info(message)
+        self.logger_step.info(message)
 
     def log_episode_result(self, metrics):
+        """Метод записывает данные в лог для оффлайн лог ридера"""
         message = ";".join(["{" + val + "}" for val in metrics.keys()])
         message = message.format(**metrics)
-        self.logger.warning(message)
+        self.logger_episode.warning(message)
 
     def get_step_info(self):
+        """Метод записывает данные в лог для детального разбора того, что происходит"""
         step_info = {
             "cursor": self.core.context.get("ts"),
             "state": self.core.context.get("is_open_prev", domain="Trade", default=False),
@@ -146,5 +105,14 @@ class TradeEnv(gym.Env):
         return step_info
 
 
-
-
+def obs_to_string(observation):
+    if isinstance(observation, list):
+        obs_formatted = []
+        for obs in observation:
+            obs_formatted.append(np.array2string(obs, max_line_width=500, precision=8, separator=',',
+                                                 suppress_small=True).replace("\n", " | "))
+        obs_formatted = "; ".join(map(str, obs_formatted))
+    else:
+        obs_formatted = np.array2string(observation, max_line_width=500, precision=8, separator=',',
+                                        suppress_small=True).replace("\n", " | ")
+    return obs_formatted

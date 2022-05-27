@@ -1,6 +1,6 @@
 import numpy as np
 import time
-from dataset_tools import DataPoint
+from .data_point import DataPoint
 
 
 def with_debug_time(func):

@@ -36,8 +36,10 @@ class Player:
 
         while not done:
             obs_transformed = [tf.expand_dims(tf.convert_to_tensor(obs), 0) for obs in observation]
-            action = self.model.predict(obs_transformed)
-            reward, action_result = self.core.apply_action(action.argmax())
+            action = self.model(obs_transformed)
+
+            action = tf.argmax(action[0]).numpy()
+            reward, action_result = self.core.apply_action(action)
 
             if isinstance(action_result, BadAction):
                 self.bad_actions_history.append(action_result)
