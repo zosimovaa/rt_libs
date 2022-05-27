@@ -18,7 +18,7 @@ class PlotObject:
 
 
 class LiveTrainPlot:
-    FIG_SIZE_X = 11
+    FIG_SIZE_X = 17
     FIG_SIZE_Y = 6
     DPI = 50
     MAX_POINTS = 300

@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import tensorflow as tf
@@ -23,7 +22,7 @@ class Player:
         self.ax = None
 
         self.test = []
-        self.render=render
+        self.render = render
 
     def play(self):
         self.trade_actions_history = []
@@ -43,6 +42,7 @@ class Player:
 
             if isinstance(action_result, BadAction):
                 self.bad_actions_history.append(action_result)
+
             if isinstance(action_result, TradeAction) and action_result.is_open:
                 self.trade_actions_history.append(action_result)
 
@@ -56,7 +56,6 @@ class Player:
         return metrics
 
     def render_plot(self):
-
         self.fig, self.ax = plt.subplots(figsize=(self.PLOT_X, self.PLOT_Y), dpi=self.DPI, constrained_layout=True)
         self.ax.plot(self.dataset_handler.dataset.index, self.dataset_handler.dataset.loc[:, "lowest_ask"])
 

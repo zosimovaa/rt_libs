@@ -52,6 +52,7 @@ class TradeEnv(gym.Env):
 
     def reset(self):
         metrics = self.core.get_metrics()
+        print("reset")
         self.log_episode_result(metrics)
         self.live_train_plot.update_plot(metrics)
 
@@ -81,7 +82,7 @@ class TradeEnv(gym.Env):
                   "Balance: {balance:<8.3f} |---| [{observation}]"
 
         message = message.format(**self.step_info)
-        self.logger_step.info(message)
+        self.logger_step.warning(message)
 
     def log_episode_result(self, metrics):
         """Метод записывает данные в лог для оффлайн лог ридера"""
