@@ -5,10 +5,6 @@ from core.core_actions import BadAction, TradeAction
 
 
 class Player:
-    PLOT_X = 13
-    PLOT_Y = 5
-    DPI = 40
-    FONT_SIZE = 20
 
     def __init__(self, env_core, model, dataset_handler, render=True):
         self.core = env_core
@@ -24,7 +20,17 @@ class Player:
         self.test = []
         self.render = render
 
-    def play(self):
+        self.fig_size_x = None
+        self.fig_size_y = None
+        self.dpi = None
+        self.font_size = None
+
+    def play(self, fig_size_x=13, fig_size_y=5, dpi=50, font_size=20):
+        self.fig_size_x = fig_size_x
+        self.fig_size_y = fig_size_y
+        self.dpi = dpi
+        self.font_size = font_size
+
         self.trade_actions_history = []
         self.bad_actions_history = []
 
@@ -56,11 +62,11 @@ class Player:
         return metrics
 
     def render_plot(self):
-        self.fig, self.ax = plt.subplots(figsize=(self.PLOT_X, self.PLOT_Y), dpi=self.DPI, constrained_layout=True)
+        self.fig, self.ax = plt.subplots(figsize=(self.fig_size_x, self.fig_size_y), dpi=self.dpi, constrained_layout=True)
         self.ax.plot(self.dataset_handler.dataset.index, self.dataset_handler.dataset.loc[:, "lowest_ask"])
 
         txt = self.get_message()
-        self.ax.annotate(txt, (0.04, 0.6), xycoords='figure fraction', size=self.FONT_SIZE)
+        self.ax.annotate(txt, (0.04, 0.6), xycoords='figure fraction', size=self.font_size)
 
         y_min = min(self.dataset_handler.dataset.loc[:, "highest_bid"])
         y_max = max(self.dataset_handler.dataset.loc[:, "highest_bid"])

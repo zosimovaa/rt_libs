@@ -1,8 +1,9 @@
 import time
-import numpy as np
-import tensorflow as tf
 from datetime import datetime
 import logging
+import numpy as np
+import tensorflow as tf
+
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ class DQN:
         self.env = env
 
         # todo убрать зависимость
-        self.env.live_train_plot.init_plot()
+        #self.env.live_train_plot.init_plot()
 
         self.model = model
         self.model_target = model_target
@@ -58,7 +59,7 @@ class DQN:
     def _sample_transformer(self, state):
         """
         :param state: текущий стейт может быть np.ndarray или list. Если list - значит работаем с multiple input
-        :return:
+        :return: state расширенной размерности
         """
         new_state = []
         if isinstance(self.env.observation_space, list):
@@ -128,7 +129,6 @@ class DQN:
                 state_next, reward, done, _ = self.env.step(action)
                 state_next = np.array(state_next)
 
-                # todo подумать над вынесением всего этого в env. Тут так часто обновять не нужно.
                 self.env.render() #; Adding this line would show the attempts
                 # of the agent in a pop up window.
 
@@ -149,10 +149,10 @@ class DQN:
                     indices = np.random.choice(range(len(self.done_history)), size=self.batch_size)
 
                     # Using list comprehension to sample from replay buffer
-                    #!!! multiple state transformation
+                    #!!! multiple input state transformation
                     state_sample = np.array([self.state_history[i] for i in indices])        
                     state_sample = self._batch_transformer(state_sample)
-                    #!!! multiple state transformation
+                    #!!! multiple input state transformation
                     state_next_sample = np.array([self.state_next_history[i] for i in indices])
                     state_next_sample = self._batch_transformer(state_next_sample)
 
@@ -220,18 +220,18 @@ class DQN:
             self.episode_count += 1
 
             if goal_reward is not None and self.running_reward >= goal_reward:  # Condition to consider the task solved
-                print("Solved at episode {}!".format(self.episode_count))
+                logger.critical("Solved at episode {}!".format(self.episode_count))
                 break
 
             if max_frames is not None and self.frame_count >= max_frames:
-                print("Frame {} was reached!".format(self.frame_count))
+                logger.critical("Frame {} was reached!".format(self.frame_count))
                 break
 
     def log(self, tm_start):
         tm_end = time.time()
         tm_now = datetime.now().strftime("%H:%M:%S")
 
-        template = "{} ({} sec) | reward: {:>5.2f} at episode {}, frame count {}, epsilon: {:.2f}, loss:{:.2f}"
+        template = "{0} ({1} sec) | reward: {2:>5.2f} at episode {3}, frame count {4}, epsilon: {5:.2f}, loss:{6:.2f}"
         message = template.format(
             tm_now,
             int(tm_end - tm_start),
@@ -241,5 +241,4 @@ class DQN:
             self.epsilon,
             np.mean(self.loss_history)
         )
-
         logger.warning(message)

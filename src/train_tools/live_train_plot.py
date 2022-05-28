@@ -18,12 +18,9 @@ class PlotObject:
 
 
 class LiveTrainPlot:
-    FIG_SIZE_X = 17
-    FIG_SIZE_Y = 6
-    DPI = 50
     MAX_POINTS = 300
 
-    def __init__(self, alias, update=15):
+    def __init__(self, alias, update=1):
         self.alias = alias
         self.fig = None
         self.ax = None
@@ -33,9 +30,12 @@ class LiveTrainPlot:
         self.update = update
         plt.ion()
 
-    def init_plot(self):
-        self.fig, self.ax = plt.subplots(figsize=(self.FIG_SIZE_X, self.FIG_SIZE_Y),
-                                         nrows=3, dpi=self.DPI, constrained_layout=True)
+    def init_plot(self, fig_size_x=17, fig_size_y=6, dpi=50, update=None):
+        self.fig, self.ax = plt.subplots(figsize=(fig_size_x, fig_size_y),
+                                         nrows=3, dpi=dpi, constrained_layout=True)
+
+        if update:
+            self.update = update
 
         ax0_secondary = self.ax[0].twinx()
         self.lines["Penalties"] = PlotObject('Penalties', self.ax[0], 'crimson')

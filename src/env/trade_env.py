@@ -1,11 +1,9 @@
 import logging
 import gym
 import numpy as np
-from .log_setup import logger_factory
+from .log_setup import logger_setup
 
-from train_tools.live_train_plot import LiveTrainPlot
-
-logger = logging.getLogger("env")
+import train_tools.live_train_plot as train_plot
 
 
 class TradeEnv(gym.Env):
@@ -17,24 +15,19 @@ class TradeEnv(gym.Env):
         self.episode = -1
 
         self.dataset_provider = dataset_provider
-        self.live_train_plot = LiveTrainPlot(self.core.alias)
+        self.live_train_plot = train_plot.LiveTrainPlot(self.core.alias)
 
         data_point = self.dataset_provider.reset()
         self.core.reset(data_point=data_point)
 
         self.step_info = dict()
 
-        self.logger_episode = logger_factory("episode", self.core.alias)
-        self.logger_step = logger_factory("step", self.core.alias)
-
-        self.logger_step.info("info")
-        self.logger_step.warning("warning")
-        self.logger_step.error("error")
+        self.logger = logging.getLogger(__name__)
+        self.logger = logger_setup(self.logger, core.alias)
 
         metrics = self.core.get_metrics()
-        self.logger_episode.warning(";".join(metrics.keys()))
-
-        logger.warning("Observation space {}".format(self.observation_space))
+        self.logger.warning(";".join(metrics.keys()))
+        self.logger.info("Observation space {}".format(self.observation_space))
 
     @property
     def action_space(self):
@@ -52,11 +45,8 @@ class TradeEnv(gym.Env):
 
     def reset(self):
         metrics = self.core.get_metrics()
-        print("reset")
         self.log_episode_result(metrics)
         self.live_train_plot.update_plot(metrics)
-
-        self.logger_step.warning("New episode -------------------------------")
 
         # Сброс датасета и подготовка наблюдения
         self.episode += 1
@@ -82,13 +72,13 @@ class TradeEnv(gym.Env):
                   "Balance: {balance:<8.3f} |---| [{observation}]"
 
         message = message.format(**self.step_info)
-        self.logger_step.warning(message)
+        self.logger.debug(message)
 
     def log_episode_result(self, metrics):
         """Метод записывает данные в лог для оффлайн лог ридера"""
         message = ";".join(["{" + val + "}" for val in metrics.keys()])
         message = message.format(**metrics)
-        self.logger_episode.warning(message)
+        self.logger.warning(message)
 
     def get_step_info(self):
         """Метод записывает данные в лог для детального разбора того, что происходит"""
