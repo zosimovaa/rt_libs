@@ -16,7 +16,7 @@ class CoreError(Exception):
 
 
 class CoreFacadeInterface(ABC):
-    """Интерфейс, описывающий функциональность для тренировки моделей"""
+    """Интерфейс, описывающий функциональность для тренировки моделей и обеспечению реальных торгов на бирже"""
 
     @abstractmethod
     def get_action_space(self):
@@ -30,7 +30,7 @@ class CoreFacadeInterface(ABC):
 
     @abstractmethod
     def get_observation(self, data_point=None):
-        """ Получение observation_builder для текущей точки данных"""
+        """ Получение sample для текущей точки данных"""
         pass
 
     @abstractmethod
@@ -64,6 +64,7 @@ class CoreFacade:
         self.log.debug("Instance initialized")
 
     def get_action_space(self):
+        # todo реализовать метод в action_controller
         action_space = len(self.action_controller.handler)
         self.log.debug("Action space: {}".format(action_space))
         return action_space

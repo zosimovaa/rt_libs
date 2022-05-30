@@ -2,7 +2,6 @@ from .core_actions import BadAction, TradeAction
 from .market_providers.test_market_provider import TestMarketProvider
 from .context import Context, ContextWithDomains
 from .metrics import MetricCollector
-from .ticker import Ticker
 from .observation_builder.observation import ObservationBuilderBasic, ObservationBuilderBasicCache
 from .observation_builder.observation import ObservationBuilderFutureFeature, ObservationBuilderFutureFeatureCache
 
