@@ -1,120 +1,130 @@
+"""
+Класс DataPoint реализован, чтобы передать текущее представление точки данных в core.
+
+Данный класс решает несколько проблем:
+ 1. На этапе обучение позвозяет передать дополнительные данные о точках в будущем
+ для расчета индикатора тренда. В целевом решении эта задача будет решаться с помощью дополнительной модели.
+
+ 2.Содержит в себе необходимые методы для получения нужных представлений данных.
+
+Основные тезисы:
+ - Индексы реальные, не обнуляются (не начинаются с нуля).
+ - Текущее значение имеет индекс с максимальным значением, остальгные значения считаются историчсекими.
+ - Информация о будущих точках представлена в отдельном поле и не пересекается с датасетом.
+ - Реализация DataPoint отвязана от названий полей, чтобы была возможность работать с разными датасетами.
+
+"""
 import numpy as np
-from basic_application import with_exception
-
-
-class DataPointError(Exception):
-    pass
 
 
 class DataPoint:
-    @with_exception(DataPointError)
-    def __init__(self, dataset, dataset_future=None):
-        self.data = dataset
-        self.data_f = dataset_future
+    """DataPoint, базовая версия"""
+    def __init__(self, data, data_future=None):
+        self.data = data
+        self.data_f = data_future
         self.current_index = max(self.data.index)
-        self.offset = len(dataset)
+        self.offset = len(data)
 
-    @with_exception(DataPointError)
     def get_current_ts(self):
+        """
+        Возвращает текущее значение ts
+        :return: int, текущее значение ts
+        """
         return self.current_index
 
-    @with_exception(DataPointError)
-    def get_price(self, name, cursor=None):
+    def get_timestamps(self):
+        """
+        Возвращает все значения ts
+        :return: numpy.ndarray, список всех ts
+        """
+        return self.data.index.values
+
+    def get_value(self, name, cursor=None):
+        """
+        Целевой метод для получения выбранного значения из данных
+        :param name: название колонки (lowest_ask, highest_bid или иное)
+        :param cursor: значение индекса (не обязательный параметр)
+        :return: значение заданной колонки
+        """
         if cursor is None:
             cursor = self.current_index
         val = self.data.loc[cursor, name]
         return val
 
-    @with_exception(DataPointError)
-    def get_prices(self, name):
+    def get_values(self, name):
+        """
+        Возвращает все значения данных инструмента (за все ts)
+        :param name: название колонки (lowest_ask, highest_bid или иное)
+        :return: pandas.core.series.Series, значения заданной колонки
+        """
         data = self.data.loc[:, name]
         return data
 
-    @with_exception(DataPointError)
-    def get_future_prices(self, name, cursor=None):
-        """Возвращает будущие точки"""
+    def get_current_data(self):
+        """
+        Возвращает весь датасет
+        :return: pandas.core.frame.DataFrame
+        """
+        return self.data
+
+    def get_last_diffs(self, num, column='lowest_ask'):
+        """
+        Метод возвращает разницу между значениями одной колонки, начиная с "конца", по индексу
+        Т.е. от актуального значения.
+
+        :param num: Количество возвращаемых точек данных
+        :param column: название колонки
+        :return: numpy.ndarray. Последнее значение соответствует разности последнего и предпоследнего значений в data
+        """
+        col_idx = np.argmax(self.data.columns == column)
+        diffs = self.data.diff(axis=0).iloc[-num:, col_idx]
+        return diffs.values
+
+    def get_future_values(self, name):
+        """
+        Возвращает все будущние значения данных инструмента (за все ts) из заданной колонки.
+        :param name: название колонки (lowest_ask, highest_bid или иное)
+        :return: значение заданной цены
+        """
         data = self.data_f.loc[:, name]
         return data
 
-    @with_exception(DataPointError)
-    def get_timestamps(self):
-        return self.data.index.values
-
-    @with_exception(DataPointError)
-    def get_current_data(self):
-        return self.data
-
-    @with_exception(DataPointError)
     def get_future_data(self):
+        """
+        Возвращает весь датасет будущих данных
+        :return: pandas.core.frame.DataFrame
+        """
         return self.data_f
 
-    @with_exception(DataPointError)
-    def get_last_diffs(self, num):
-        data = self.get_current_data()
-        col_idx = np.argmax(data.columns == 'lowest_ask')
-        diffs = data.diff(axis=0).iloc[-num:, col_idx]
-        return diffs.values
-
-
-
-
-class DataPoint_old:
-    @with_exception(DataPointError)
-    def __init__(self, dataset, offset, future_offset):
-        self.data = dataset
-        self.offset = offset
-        self.future_offset = future_offset
-        self.current_index = self.offset - 1
-
-    @with_exception(DataPointError)
-    def get_current_ts(self):
-        val = self.data.index[self.current_index]
-        return val
-
-    @with_exception(DataPointError)
     def get_price(self, name, cursor=None):
+        """
+        deprecated
+        Возвращает выбранную цену инструмента
+        :param name: название цены (lowest_ask, highest_bid)
+        :param cursor: значение индекса (не обязательный параметр)
+        :return: значение заданной цены
+        """
         if cursor is None:
             cursor = self.current_index
-        col_mask = self.data.columns == name
-        val = self.data.iloc[cursor, col_mask].values[0]
+        val = self.data.loc[cursor, name]
         return val
 
-    @with_exception(DataPointError)
     def get_prices(self, name):
-        col_mask = self.data.columns == name
-        data = self.data.iloc[:self.current_index + 1, col_mask]
+        """
+        deprecated
+        Возвращает все цены инструмента (за все ts)
+        :param name: название цены (lowest_ask, highest_bid)
+        :return: значение заданной цены
+        """
+        data = self.data.loc[:, name]
         return data
 
-    @with_exception(DataPointError)
     def get_future_prices(self, name, cursor=None):
-        """Возвращает будущие точки"""
-        if cursor is None:
-            cursor = self.current_index
-
-        col_mask = self.data.columns == name
-        bound_low = cursor + 1
-        bound_hi = bound_low + self.future_offset
-        data = self.data.iloc[bound_low:bound_hi, col_mask]
+        """
+        deprecated
+        Возвращает все будущие цены инструмента (за все ts)
+        :param name: название цены (lowest_ask, highest_bid)
+        :return: значение заданной цены
+        """
+        data = self.data_f.loc[:, name]
         return data
-
-    @with_exception(DataPointError)
-    def get_timestamps(self):
-        idxs = self.data.index[:self.current_index + 1].values
-        return idxs
-
-    @with_exception(DataPointError)
-    def get_current_data(self):
-        data = self.data.iloc[:self.current_index + 1, :]
-        return data
-
-    @with_exception(DataPointError)
-    def get_future_data(self):
-        data = self.data.iloc[self.current_index + 1:, :]
-        return data
-
-    @with_exception(DataPointError)
-    def get_last_diffs(self, num):
-        data = self.get_current_data()
-        col_idx = np.argmax(data.columns == 'lowest_ask')
-        diffs = data.diff(axis=0).iloc[-num:, col_idx]
-        return diffs.values
