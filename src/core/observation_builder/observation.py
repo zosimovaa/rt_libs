@@ -82,7 +82,7 @@ class ObservationBuilderBasicCache(ObservationBuilder):
                 obs_point = [price, profit]
                 self.history.append(obs_point)
 
-    def get(self):
+    def get(self, data_point):
         if self.history is None:
             self.init_history()
 

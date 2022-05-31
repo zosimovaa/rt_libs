@@ -35,7 +35,8 @@ class TradeEnv(gym.Env):
 
     @property
     def observation_space(self):
-        observation = self.core.get_observation()
+        data_point = self.dataset_provider.reset()
+        observation = self.core.get_observation(data_point=data_point)
 
         if isinstance(observation, list):
             observation_space = [inp.shape for inp in observation]
@@ -52,7 +53,7 @@ class TradeEnv(gym.Env):
         self.episode += 1
         data_point = self.dataset_provider.reset()
         self.core.reset(data_point=data_point)
-        observation = self.core.get_observation()
+        observation = self.core.get_observation(data_point=data_point)
         return observation
 
     def step(self, action):

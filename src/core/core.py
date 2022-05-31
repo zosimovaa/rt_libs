@@ -1,8 +1,8 @@
 from .context import ContextWithDomains
 from .ticker import Ticker
 from .market_providers import TestMarketProvider
-from .observation_builder.observation import ObservationBuilderBasicCache, ObservationBuilderBasic
-from .observation_builder.observation import ObservationBuilderFutureFeatureCache, ObservationBuilderFutureFeature
+from .observation_builder.basic import ObservationBuilderBasicCache, ObservationBuilderBasic
+from .observation_builder.with_trend_indicator import ObservationBuilderFutureFeatureCache, ObservationBuilderFutureFeature
 from .metrics import MetricCollector
 import logging
 from abc import ABC, abstractmethod
@@ -77,12 +77,12 @@ class CoreFacade:
         self.action_controller.reset()
         self.metric_collector.reset()
 
-    @with_exception(CoreError)
+    #@with_exception(CoreError)
     def get_observation(self, data_point=None):
         self.context.update_datapoint(data_point)
         # todo внедрить статус в процессы core
         self.context.set("status", "ok")
-        observation = self.observation.get()
+        observation = self.observation.get(data_point)
         self.context.set("observation_builder", observation, domain="Data")
         return observation
 

@@ -1,3 +1,9 @@
+"""
+Что храним:
+ - состояние сделки
+
+"""
+
 import logging
 
 logger = logging.getLogger(__name__)
