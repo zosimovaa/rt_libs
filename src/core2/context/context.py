@@ -11,7 +11,7 @@ Core context.
  - ts
  - lowest_ask
  - highest_bid
- - trade_open
+ - is_open
 """
 
 
@@ -43,5 +43,10 @@ class Context:
         if self.trade is not None:
             self.trade.update(highest_bid)
             self.set("is_open", self.trade.is_open)
+            self.set("profit", self.trade.profit)
         else:
             self.set("is_open", False)
+            self.set("profit", 0)
+
+    def update_trade(self, trade):
+        self.trade = trade
