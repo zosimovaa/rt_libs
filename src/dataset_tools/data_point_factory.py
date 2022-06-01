@@ -50,7 +50,7 @@ class DataPointFactory:
         idxs = self.get_future_idx()
         data_f = self.dataset.loc[idxs, ["lowest_ask", "highest_bid"]]
 
-        data_point = DataPoint(data_, dataset_future=data_f)
+        data_point = DataPoint(data_, data_future=data_f)
         return data_point
 
     def get_next_step(self):

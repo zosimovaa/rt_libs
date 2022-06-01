@@ -1,6 +1,59 @@
 """
 Что храним:
- - состояние сделки
+    - data_point
+    - ссылку на сделку
+    - action
+
+
+------------------
+    - context
+        >+ ts
+        >+ lowest_ask
+        >+ highest_bid
+        >??? is_open_prev - ???
+
+    - core
+        >+ update_datapoint(data_point)
+        >??? set("status", "ok")
+        >??? set("observation_builder", observation
+        >??? set("action", action)
+
+    - observation
+        <+ data_point
+        <+ highest_bid
+        <+ is_open
+        <+ open_ts
+        <+ open_price
+
+
+    - ticker
+        <+ highest_bid
+        <+ ts
+        <+ profit
+        < reward
+        < is_open
+        < data_point
+
+    - BadAction
+        < ts
+        < action
+
+    - TradeAction
+        < ts
+        < action
+        < lowest_ask
+        < highest_bid
+        < market_fee
+
+
+    - TestMarketProvider
+        > update_trade(TradeAction)
+        < highest_bid
+
+
+
+
+
 
 """
 
