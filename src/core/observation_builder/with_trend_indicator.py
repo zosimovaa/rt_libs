@@ -56,6 +56,7 @@ class ObservationBuilderFutureFeature(ObservationBuilderInterface):
             np.array([trade_state], dtype=np.float32),
             np.array(conv_data, dtype=np.float32)
         ]
+
         return observation
 
     def _get_profit(self, data_point, trade_state):

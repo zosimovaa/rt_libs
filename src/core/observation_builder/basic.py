@@ -48,13 +48,14 @@ class ObservationBuilderBasic(ObservationBuilderInterface):
             np.array([trade_state], dtype=np.float32),
             np.array(conv_data, dtype=np.float32)
         ]
+
         return observation
 
     def _get_profit(self, data_point, trade_state):
         """Считает профит на лету, по данным текущего datapoint"""
         if trade_state:
             profit = data_point.get_prices("highest_bid").values.copy().reshape(-1)
-            mask = data_point.get_timestamps() > self.context.get("open_ts", domain="Trade")
+            mask = data_point.get_timestamps() > self.context.get('open_ts', domain="Trade")
             profit = profit / self.context.get("open_price", domain="Trade") - 1 - self.context.market_fee
             profit = profit * mask * 10
         else:
@@ -117,6 +118,7 @@ class ObservationBuilderBasicCache(ObservationBuilderInterface):
             np.array([self.context.get("is_open", domain="Trade")], dtype=np.float32),
             np.array(conv_data, dtype=np.float32)
         ]
+
         return observation
 
     def _build_history_point(self):
