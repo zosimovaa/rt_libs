@@ -1,6 +1,7 @@
 import logging
 
-from .core_actions import BadAction, TradeAction
+from core.actions import BadAction, TradeAction
+#from ..core.actions import BadAction, TradeAction
 
 
 logger = logging.getLogger(__name__)
@@ -12,7 +13,6 @@ class MetricCollector:
 
     def __init__(self, enabled=True):
         self.metrics = dict()
-        self.enabled = enabled
         self.reset()
 
     def process(self, reward, action_result):
