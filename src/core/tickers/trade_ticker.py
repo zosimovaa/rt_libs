@@ -70,7 +70,7 @@ class Ticker:
             lowest_ask = self.context.get("lowest_ask", 0)
             highest_bid = self.context.get("highest_bid", 0)
 
-            action_result = TradeAction(ts, lowest_ask, highest_bid, self.market_fee)
+            action_result = TradeAction(ts, lowest_ask, highest_bid, market_fee=self.market_fee)
             self.trade = action_result
             self.context.set_trade(self.trade)
             # <<< trade controller logic end
