@@ -37,7 +37,7 @@ class ObservationBuilderFutureFeature(ObservationBuilderInterface):
 
         # rates representation
         current_price = self.context.get("highest_bid")
-        rates = (data_point.get_prices("highest_bid").values / current_price - 1) * 10
+        rates = (data_point.get_values("highest_bid").values / current_price - 1) * 10
 
         # profit representation
         profit = self._get_profit(data_point, trade_state)
@@ -61,7 +61,7 @@ class ObservationBuilderFutureFeature(ObservationBuilderInterface):
 
     def _get_profit(self, data_point, trade_state):
         if trade_state:
-            profit = data_point.get_prices("highest_bid").values.copy().reshape(-1)
+            profit = data_point.get_values("highest_bid").values.copy().reshape(-1)
             mask = data_point.get_timestamps() > self.context.get("open_ts", domain="Trade")
             profit = profit / self.context.get("open_price", domain="Trade") - 1 - self.context.market_fee
             profit = profit * mask * 10
@@ -73,8 +73,10 @@ class ObservationBuilderFutureFeature(ObservationBuilderInterface):
         ti = []
         # todo - потери времени на цикле.
         for i in range(self.context.data_point.offset):
-            current_value = self.context.data_point.get_price("highest_bid", cursor=i)
-            future_values = self.context.data_point.get_future_prices("highest_bid", cursor=i).values.reshape(-1)
+            current_value = self.context.data_point.get_value("highest_bid", cursor=i)
+
+            # todo Здесь похоже, что есть ошибка
+            future_values = self.context.data_point.get_future_values("highest_bid").values.reshape(-1)
 
             diff = np.array(future_values / current_value - 1) * 100
             coeffs = np.linspace(1.0, 0.5, len(diff))
@@ -104,8 +106,8 @@ class ObservationBuilderFutureFeatureCache(ObservationBuilderInterface):
         self.history = deque(maxlen=len(idxs))
 
         for idx in idxs:
-            price = self.context.data_point.get_price("highest_bid", cursor=idx)
-            future_values = self.context.data_point.get_future_prices("highest_bid", cursor=idx).values.reshape(-1)
+            price = self.context.data_point.get_value("highest_bid", cursor=idx)
+            future_values = self.context.data_point.get_future_values("highest_bid").values.reshape(-1)
             trend = self._get_trend(future_values, price)
             profit = 0
 
@@ -150,7 +152,7 @@ class ObservationBuilderFutureFeatureCache(ObservationBuilderInterface):
             price = self.context.get("highest_bid")
             profit = self._get_profit()
 
-            future_prices = self.context.data_point.get_future_prices("highest_bid")
+            future_prices = self.context.data_point.get_future_values("highest_bid")
             future_prices = future_prices.values.reshape(-1)
             trend = self._get_trend(future_prices, price)
             obs_point = [price, profit, trend]

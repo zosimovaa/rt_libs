@@ -1,3 +1,10 @@
+# Реализации классов билдера для первой части задачи - для абстрактных операций.
+from .abstract_builder import AbstractObservationBuilderSequencePrediction
+from .abstract_builder import AbstractObservationBuilderCloseSignal
+from .abstract_builder import AbstractObservationBuilderOpenSignal
+from .abstract_builder import AbstractObservationBuilderCompleteTrade
+
+
 from .basic import ObservationBuilderBasic
 from .with_trend_indicator import ObservationBuilderFutureFeature
 
