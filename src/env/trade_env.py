@@ -29,6 +29,7 @@ class TradeEnv(gym.Env):
         metrics = self.core.get_metrics()
         self.logger.warning(";".join(metrics.keys()))
         self.logger.info("Observation space {}".format(self.observation_space))
+        self.step_num = 0
 
     @property
     def action_space(self):
@@ -36,7 +37,7 @@ class TradeEnv(gym.Env):
 
     @property
     def observation_space(self):
-        data_point = self.dp_factory.reset()
+        data_point = self.dp_factory.get_current_step()
         observation = self.core.get_observation(data_point=data_point)
 
         if isinstance(observation, list):
@@ -46,12 +47,15 @@ class TradeEnv(gym.Env):
         return observation_space
 
     def reset(self):
+        self.step_num = 0
         metrics = self.core.get_metrics()
         self.log_episode_result(metrics)
         self.live_train_plot.update_plot(metrics)
 
+
         # Сброс датасета и подготовка наблюдения
         self.episode += 1
+
         data_point = self.dp_factory.reset()
         self.core.reset(data_point=data_point)
         observation = self.core.get_observation(data_point=data_point)
@@ -64,16 +68,17 @@ class TradeEnv(gym.Env):
         # new cycle ->>>
         data_point, done = self.dp_factory.get_next_step()
         observation = self.core.get_observation(data_point=data_point)
+        self.step_num = self.step_num + 1
 
         return observation, reward, done, self.step_info
 
     def render(self, mode='ansi'):
         message = "Cursor: {cursor:<5} | State: {state:<2} ---> Action: {action:<3} ---> " \
                   "Reward: {reward:<8.3f} | Profit: {profit:<8.3f} | Total reward: {total_reward:<8.3f} | " \
-                  "Balance: {balance:<8.3f} |---| [{observation}]"
+                  "Balance: {balance:<8.3f} |---| {observation}"
 
         message = message.format(**self.step_info)
-        self.logger.debug(message)
+        self.logger.info(message)
 
     def log_episode_result(self, metrics):
         """Метод записывает данные в лог для оффлайн лог ридера"""
