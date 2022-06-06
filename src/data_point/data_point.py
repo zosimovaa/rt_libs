@@ -96,35 +96,3 @@ class DataPoint:
         """
         return self.data_f
 
-    def get_price(self, name, cursor=None):
-        """
-        deprecated
-        Возвращает выбранную цену инструмента
-        :param name: название цены (lowest_ask, highest_bid)
-        :param cursor: значение индекса (не обязательный параметр)
-        :return: значение заданной цены
-        """
-        if cursor is None:
-            cursor = self.current_index
-        val = self.data.loc[cursor, name]
-        return val
-
-    def get_prices(self, name):
-        """
-        deprecated
-        Возвращает все цены инструмента (за все ts)
-        :param name: название цены (lowest_ask, highest_bid)
-        :return: значение заданной цены
-        """
-        data = self.data.loc[:, name]
-        return data
-
-    def get_future_prices(self, name, cursor=None):
-        """
-        deprecated
-        Возвращает все будущие цены инструмента (за все ts)
-        :param name: название цены (lowest_ask, highest_bid)
-        :return: значение заданной цены
-        """
-        data = self.data_f.loc[:, name]
-        return data

@@ -1,6 +1,10 @@
 from .data_point import DataPoint
 import numpy as np
 import logging
+import threading
+
+
+logger = logging.getLogger(__name__)
 
 
 class DataPointFactory:
@@ -34,6 +38,7 @@ class DataPointFactory:
         up_bound = min(self.cursor + self.period, self.dataset.index.max())
         low_bound = up_bound - self.n_observation_points * self.period
         idxs = np.arange(low_bound, up_bound, self.period)
+
         return idxs
 
     def get_future_idx(self):
@@ -41,22 +46,27 @@ class DataPointFactory:
         up_bound = self.cursor + (self.n_future_points + 1) * self.period
         idxs = np.arange(low_bound, up_bound, self.period)
         idxs = np.array(list(map(lambda x: min(x, self.max_step), idxs)))
-        return (idxs)
+        return idxs
 
     def get_current_step(self):
         idxs = self.get_idx()
-        data_ = self.dataset.loc[idxs, ["lowest_ask", "highest_bid"]]
+        data_ = self.dataset.loc[idxs, :]
 
         idxs = self.get_future_idx()
-        data_f = self.dataset.loc[idxs, ["lowest_ask", "highest_bid"]]
+        data_f = self.dataset.loc[idxs, :]
 
         data_point = DataPoint(data_, data_future=data_f)
         return data_point
 
     def get_next_step(self):
         if not self.done:
-            self.cursor += self.step_size
-        self.done = True if self.cursor >= self.max_step else False
+            self.cursor = self.cursor + self.step_size
+
+        if self.cursor >= self.max_step:
+            self.done = True
+        else:
+            self.done = False
+
         data_point = self.get_current_step()
         return data_point, self.done
 
