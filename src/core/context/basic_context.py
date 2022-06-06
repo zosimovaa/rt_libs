@@ -36,9 +36,6 @@ class BasicContext:
         self.trade = None
         self.params = dict()
 
-    def set_trade(self, trade):
-        self.trade = trade
-
     def set(self, param, value, domain=DEFAULT_DOMAIN):
         if domain not in self.params:
             self.params[domain] = dict()
@@ -63,15 +60,16 @@ class BasicContext:
     def update_trade(self):
         if self.trade is not None:
             self.set("is_open_prev", self.trade.is_open, domain="Trade")
-
-            self.trade.update(self.get("highest_bid", default=0))
-
             for key in self.trade.__dict__:
                 self.set(key, self.trade.__dict__[key], domain="Trade")
 
+            self.set("is_open", self.trade.is_open, domain="Trade")
             self.set("profit", self.trade.get_profit(), domain="Trade")
 
         else:
             self.set("is_open_prev", False, domain="Trade")
             self.set("is_open", False, domain="Trade")
             self.set("profit", 0, domain="Trade")
+
+    def set_trade(self, trade):
+        self.trade = trade
