@@ -21,7 +21,7 @@ class MetricCollector:
         if isinstance(action_result, BadAction):
             self.save_metric("Penalties")
 
-        if isinstance(action_result, TradeAction) and not action_result.is_open:
+        if isinstance(action_result, (TradeAction)) and not action_result.is_open:
             self.save_trade(action_result.profit)
 
     def save_trade(self, balance):
