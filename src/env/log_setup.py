@@ -13,14 +13,14 @@ def logger_setup(log, alias, log_dir="logs"):
     # Episode log
     full_path = os.path.join(log_path, alias + "_episode" + '.log')
     fh_episode = logging.FileHandler(full_path, mode='w')
-    fh_episode.setLevel(logging.INFO)
+    fh_episode.setLevel(logging.WARNING)
     fh_episode.setFormatter(FORMATTER)
     log.addHandler(fh_episode)  # set the new handler
 
     # Step log
     full_path = os.path.join(log_path, alias + "_step" + '.log')
     fh_step = logging.FileHandler(full_path, mode='w')
-    fh_step.setLevel(logging.DEBUG)
+    fh_step.setLevel(logging.INFO)
     fh_step.setFormatter(FORMATTER)
     log.addHandler(fh_step)  # set the new handler
 
