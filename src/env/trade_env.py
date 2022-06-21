@@ -38,7 +38,7 @@ class TradeEnv(gym.Env):
     @property
     def observation_space(self):
         data_point = self.dp_factory.get_current_step()
-        observation = self.core.get_observation(data_point=data_point)
+        observation = self.core.get_observation(data_point)
 
         if isinstance(observation, list):
             observation_space = [inp.shape for inp in observation]
@@ -58,7 +58,7 @@ class TradeEnv(gym.Env):
 
         data_point = self.dp_factory.reset()
         self.core.reset(data_point=data_point)
-        observation = self.core.get_observation(data_point=data_point)
+        observation = self.core.get_observation(data_point)
         return observation
 
     def step(self, action):
@@ -67,7 +67,7 @@ class TradeEnv(gym.Env):
 
         # new cycle ->>>
         data_point, done = self.dp_factory.get_next_step()
-        observation = self.core.get_observation(data_point=data_point)
+        observation = self.core.get_observation(data_point)
         self.step_num = self.step_num + 1
 
         return observation, reward, done, self.step_info

@@ -4,17 +4,23 @@ import numpy as np
 
 
 class PlotObject:
-    def __init__(self, alias, ax, color, secondary=False):
+    def __init__(self, alias, ax, color, zero_centered=False):
+        self.alias = alias
         self.ax = ax
         self.line = ax.plot(range(1), np.ones(1), color=color, label=alias)[0]
-        self.secondary = secondary
+
+        self.zero_centered = zero_centered
 
     def update_data(self, data):
         self.line.set_ydata(data)
         self.line.set_xdata(np.arange(len(data)))
 
         self.ax.relim()  # Recalculate limits
-        self.ax.autoscale_view(True, True, True)  # Autoscale
+        self.ax.autoscale_view(tight=True, scalex=True, scaley=not self.zero_centered)  # Autoscale
+
+        if self.zero_centered:
+            yabs_max = 1.1 * max(abs(data))
+            self.ax.set_ylim(ymin=-yabs_max, ymax=yabs_max)
 
 
 class LiveTrainPlot:
@@ -38,11 +44,12 @@ class LiveTrainPlot:
             self.update = update
 
         ax0_secondary = self.ax[0].twinx()
-        self.lines["Penalties"] = PlotObject('Penalties', self.ax[0], 'crimson')
-        self.lines["TotalReward"] = PlotObject('TotalReward', ax0_secondary, 'dodgerblue', secondary=True)
+        self.lines["Zero_"] = PlotObject('Zero', self.ax[0], 'black')
+        self.lines["Penalties"] = PlotObject('Penalties', self.ax[0], 'crimson', zero_centered=True)
+        self.lines["TotalReward"] = PlotObject('TotalReward', ax0_secondary, 'dodgerblue',  zero_centered=True)
 
         self.lines["Balance"] = PlotObject('Balance', self.ax[1], 'forestgreen')
-        self.lines["Zero"] = PlotObject('Zero', self.ax[1], 'lightcoral')
+        self.lines["Zero"] = PlotObject('Zero', self.ax[1], 'black')
 
         self.lines["NegTrades"] = PlotObject('NegTrades', self.ax[2], 'orangered')
         self.lines["PosTrades"] = PlotObject('PosTrades', self.ax[2], 'royalblue')
@@ -51,10 +58,10 @@ class LiveTrainPlot:
         self.ax[1].grid()
         self.ax[2].grid()
 
-        self.ax[0].legend(loc=2)
-        ax0_secondary.legend(loc=3)
-        self.ax[1].legend(loc=6)
-        self.ax[2].legend(loc=6)
+        self.ax[0].legend(loc="upper left")
+        ax0_secondary.legend(loc="upper right")
+        self.ax[1].legend(loc="center left")
+        self.ax[2].legend(loc="center left")
 
         self.fig.canvas.draw()
 
@@ -75,9 +82,11 @@ class LiveTrainPlot:
             self.data["gr"] = self.data.index // div
             data_g = self.data.groupby(["gr"]).agg(np.mean)
 
-            for col in self.data.columns:
-                if col in self.lines:
-                    self.lines[col].update_data(data_g[[col]].values)
+            for col in self.lines:
+                alias = self.lines[col].alias
+                if alias in self.data.columns:
+                    self.lines[col].update_data(data_g[[alias]].values)
+
 
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()

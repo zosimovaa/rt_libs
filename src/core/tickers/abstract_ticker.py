@@ -1,18 +1,15 @@
 import logging
-import numpy as np
 
-from ..actions import BadAction, TradeAction
+from ..actions import BadAction, AbstractTradeAction
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractTickerOneFeature:
+class AbstractTickerBasic:
     """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции
     Используется в подготовительных сценариях
     """
-
-    OPEN_PRICE_VALUE = 0.5
 
     handler = {
         0: "_action_waiting",
@@ -63,7 +60,7 @@ class AbstractTickerOneFeature:
             action_result = BadAction(ts, self.handler.get(1))
         else:
             reward = self.reward
-            self.trade = TradeAction(self.context)
+            self.trade = AbstractTradeAction(self.context)
             self.context.set_trade(self.trade)
             action_result = self.trade
         return reward, action_result
@@ -79,9 +76,18 @@ class AbstractTickerOneFeature:
 
     def _action_close_trade(self, ts, is_open):
         if is_open:
-            feat_value = self.context.get("highest_bid")
-            reward = feat_value
             self.trade.close()
+
+            signal_value = self.context.get("highest_bid")
+
+            if signal_value > 0:
+                self.trade.profit = 1
+                self.context.set("profit", 1, domain="Trade")
+            else:
+                self.trade.profit = -1
+                self.context.set("profit", -1, domain="Trade")
+
+            reward = self.trade.profit
             action_result = self.trade
         else:
             reward = self._get_penalty()
@@ -89,9 +95,9 @@ class AbstractTickerOneFeature:
         return reward, action_result
 
 
-class AbstractTickerOpenSignal(AbstractTickerOneFeature):
+class AbstractTickerOpenSignal(AbstractTickerBasic):
     def __init__(self, *args, **kwargs):
-        AbstractTickerOneFeature.__init__(self, *args, **kwargs)
+        AbstractTickerBasic.__init__(self, *args, **kwargs)
 
     def _action_open_trade(self, ts, is_open):
         if is_open:
@@ -99,11 +105,11 @@ class AbstractTickerOpenSignal(AbstractTickerOneFeature):
             action_result = BadAction(ts, self.handler.get(1))
         else:
 
-            feat_value = self.context.get("highest_bid")
-            self.context.set("open_feat_val", feat_value)
+            open_signal_value = self.context.get("lowest_ask")
+            self.context.set("open_signal_value", open_signal_value)
 
             reward = self.reward
-            self.trade = TradeAction(self.context)
+            self.trade = AbstractTradeAction(self.context)
             self.context.set_trade(self.trade)
             action_result = self.trade
 
@@ -111,13 +117,68 @@ class AbstractTickerOpenSignal(AbstractTickerOneFeature):
 
     def _action_close_trade(self, ts, is_open):
         if is_open:
-            feat_value = self.context.get("open_feat_val")
-            reward = feat_value
             self.trade.close()
+
+            # -------------------------
+            # Блок для 'прямого' датасета, где 1 - признак покупки
+            open_signal = self.context.get("open_signal_value")
+            if open_signal == 1:
+                self.trade.profit = 1
+                self.context.set("profit", 1, domain="Trade")
+            else:
+                self.trade.profit = -1
+                self.context.set("profit", -1, domain="Trade")
+            # -------------------------
+
+            reward = self.trade.profit
             action_result = self.trade
+
         else:
             reward = self._get_penalty()
             action_result = BadAction(ts, self.handler.get(3))
         return reward, action_result
 
 
+class AbstractTickerCompleteTrade(AbstractTickerBasic):
+    def __init__(self, *args, **kwargs):
+        AbstractTickerBasic.__init__(self, *args, **kwargs)
+
+    def _action_open_trade(self, ts, is_open):
+        if is_open:
+            reward = self._get_penalty()
+            action_result = BadAction(ts, self.handler.get(1))
+        else:
+
+            open_signal_value = self.context.get("lowest_ask")
+            self.context.set("open_signal_value", open_signal_value)
+
+            reward = self.reward
+            self.trade = AbstractTradeAction(self.context)
+            self.context.set_trade(self.trade)
+            action_result = self.trade
+
+        return reward, action_result
+
+    def _action_close_trade(self, ts, is_open):
+        if is_open:
+            self.trade.close()
+
+            # -------------------------
+            # Блок для 'прямого' датасета, где 1 - признак покупки/продажи
+            open_signal = self.context.get("open_signal_value")
+            close_signal = self.context.get("highest_bid")
+
+            if open_signal > 0 and close_signal > 0:
+                self.trade.profit = 1
+                self.context.set("profit", 1, domain="Trade")
+            else:
+                self.trade.profit = -1
+                self.context.set("profit", -1, domain="Trade")
+            # -------------------------
+
+            reward = self.trade.profit
+            action_result = self.trade
+        else:
+            reward = self._get_penalty()
+            action_result = BadAction(ts, self.handler.get(3))
+        return reward, action_result

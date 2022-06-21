@@ -37,7 +37,7 @@ class ObservationBuilderBasic(ObservationBuilderInterface):
 
         # rates representation
         current_price = self.context.get("highest_bid")
-        rates = (data_point.get_prices("highest_bid").values / current_price - 1) * 10
+        rates = (data_point.get_values("highest_bid").values / current_price - 1) * 10
 
         # profit representation
         profit = self._get_profit(data_point, trade_state)
@@ -54,7 +54,7 @@ class ObservationBuilderBasic(ObservationBuilderInterface):
     def _get_profit(self, data_point, trade_state):
         """Считает профит на лету, по данным текущего datapoint"""
         if trade_state:
-            profit = data_point.get_prices("highest_bid").values.copy().reshape(-1)
+            profit = data_point.get_values("highest_bid").values.copy().reshape(-1)
             mask = data_point.get_timestamps() > self.context.get('open_ts', domain="Trade")
             profit = profit / self.context.get("open_price", domain="Trade") - 1 - self.context.market_fee
             profit = profit * mask * 10
@@ -87,7 +87,7 @@ class ObservationBuilderBasicCache(ObservationBuilderInterface):
 
         if buffer_len > 1:
             for i in range(buffer_len):
-                price = data_point.get_price("highest_bid", cursor=i)
+                price = data_point.get_value("highest_bid", cursor=i)
                 profit = 0
                 obs_point = [price, profit]
                 self.history.append(obs_point)

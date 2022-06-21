@@ -21,6 +21,11 @@ Core context.
  - is_open
 """
 
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 class BasicContext:
     DEFAULT_DOMAIN = "Common"
@@ -30,8 +35,10 @@ class BasicContext:
         self.data_point = None
         self.trade = None
         self.params = {self.DEFAULT_DOMAIN: dict()}
+        logger.debug("Instance created with market_fee {}".format(market_fee))
 
     def reset(self):
+        logger.debug("Reset")
         self.data_point = None
         self.trade = None
         self.params = dict()
@@ -39,7 +46,9 @@ class BasicContext:
     def set(self, param, value, domain=DEFAULT_DOMAIN):
         if domain not in self.params:
             self.params[domain] = dict()
+            logger.debug("Domain {0} created".format(domain))
         self.params[domain][param] = value
+        logger.debug("Value {0} set to param {1}".format(value, param))
 
     def get(self, param, default=0, domain=DEFAULT_DOMAIN):
         return self.params.get(domain, dict()).get(param, default)
@@ -54,6 +63,7 @@ class BasicContext:
         self.set("lowest_ask", data_point.get_value("lowest_ask"))
         self.set("highest_bid", data_point.get_value("highest_bid"))
 
+        logger.debug("Datapoint updated")
         # update trade status if exists
         self.update_trade()
 
@@ -63,13 +73,15 @@ class BasicContext:
             for key in self.trade.__dict__:
                 self.set(key, self.trade.__dict__[key], domain="Trade")
 
-            self.set("is_open", self.trade.is_open, domain="Trade")
             self.set("profit", self.trade.get_profit(), domain="Trade")
+            logger.debug("Trade updated")
 
         else:
             self.set("is_open_prev", False, domain="Trade")
             self.set("is_open", False, domain="Trade")
             self.set("profit", 0, domain="Trade")
+            logger.debug("Trade updated")
 
     def set_trade(self, trade):
         self.trade = trade
+        logger.debug("Set new trade")

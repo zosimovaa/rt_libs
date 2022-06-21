@@ -1,11 +1,16 @@
 """
 Core context.
 """
+import logging
 
 from .basic_context import BasicContext
 
+logger = logging.getLogger(__name__)
+
 
 class AbstractContextSequencePrediction(BasicContext):
+    LOWEST_ASK = 0
+
     def __init__(self, *args, **kwargs):
         BasicContext.__init__(self, *args, **kwargs)
 
@@ -15,7 +20,7 @@ class AbstractContextSequencePrediction(BasicContext):
 
         # update price params in context
         self.set("ts", data_point.get_current_ts())
-        self.set("lowest_ask", data_point.get_value("feature"))
+        self.set("lowest_ask", self.LOWEST_ASK)
         self.set("highest_bid", data_point.get_value("feature"))
 
         # update trade with new rates
@@ -23,6 +28,8 @@ class AbstractContextSequencePrediction(BasicContext):
 
 
 class AbstractContextCloseSignal(BasicContext):
+    LOWEST_ASK = 0
+
     def __init__(self, *args, **kwargs):
         BasicContext.__init__(self, *args, **kwargs)
 

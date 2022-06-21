@@ -7,7 +7,7 @@ from ..actions import BadAction, TradeAction
 logger = logging.getLogger(__name__)
 
 
-class Ticker:
+class Ticker_:
     """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции"""
     REWARD_SCALE_WAIT = 100
     REWARD_SCALE_OPEN = 10

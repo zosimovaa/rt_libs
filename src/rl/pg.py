@@ -144,7 +144,7 @@ class REINFORCE:
             while not done:
                 
                 action, prob = self.get_action(state)
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, _ = self.env.period(action)
                 self.remember(state, action, prob, reward)
                 self.env.render()
                 state = next_state

@@ -37,7 +37,7 @@ class Player:
         done = False
         data_point = self.dataset_handler.reset()
         self.core.reset(data_point=data_point)
-        observation = self.core.get_observation()
+        observation = self.core.get_observation(data_point)
 
         while not done:
             obs_transformed = [tf.expand_dims(tf.convert_to_tensor(obs), 0) for obs in observation]
@@ -53,7 +53,7 @@ class Player:
                 self.trade_actions_history.append(action_result)
 
             data_point, done = self.dataset_handler.get_next_step()
-            observation = self.core.get_observation(data_point=data_point)
+            observation = self.core.get_observation(data_point)
 
         if self.render:
             self.render_plot()
@@ -69,7 +69,7 @@ class Player:
         self.ax.annotate(txt, (0.04, 0.6), xycoords='figure fraction', size=self.font_size)
 
         y_min = min(self.dataset_handler.dataset.loc[:, "highest_bid"])
-        y_max = max(self.dataset_handler.dataset.loc[:, "highest_bid"])
+        y_max = max(self.dataset_handler.dataset.loc[:, "lowest_ask"])
 
         for trade in self.trade_actions_history:
             height = y_max - y_min

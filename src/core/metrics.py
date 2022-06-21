@@ -27,10 +27,12 @@ class MetricCollector:
     def save_trade(self, balance):
         self.save_metric("Trades")
         self.save_metric("Balance", val=balance)
-        if balance >= 0:
+        if balance > 0:
             self.save_metric("PosTrades")
-        else:
+        elif balance < 0:
             self.save_metric("NegTrades")
+        else:
+            self.save_metric("ZeroTrades")
 
     def save_metric(self, key, val=1):
         if key not in self.metrics.keys():

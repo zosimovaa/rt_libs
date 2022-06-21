@@ -18,6 +18,65 @@ import numpy as np
 
 
 class DataPoint:
+    def __init__(self, data, n_future_points=0):
+        self.data = data
+        self.current_index = self.data.index[-(n_future_points + 1)]
+        self.obs_len = len(data) - n_future_points
+        self.fut_len = n_future_points
+        self.period = self.data.index[1] - self.data.index[0]
+
+    def get_current_ts(self):
+        return self.current_index
+
+    def get_timestamps(self):
+        if self.fut_len:
+            return self.data.index[:-self.fut_len].values
+        else:
+            return self.data.index.values
+
+    def get_value(self, name, cursor=None):
+        if cursor is None:
+            cursor = self.current_index
+        val = self.data.loc[cursor, name]
+        return val
+
+    def get_values(self, name):
+        data = self.data.loc[:self.current_index + 1, name]
+        return data
+
+    def get_last_diffs(self, num, column='lowest_ask'):
+        row_idx_start = self.get_timestamps()[-num]
+        row_idx_end = self.current_index
+        diffs = self.data.diff(axis=0).loc[row_idx_start:row_idx_end, column]
+        return diffs.values
+
+    def get_current_data(self):
+        return self.data.loc[:self.current_index + 1]
+
+    def get_future_values(self, name, cursor=None):
+        if self.fut_len:
+            cursor = self.current_index if cursor is None else cursor
+            start_idx = cursor + self.period
+            end_idx = self.fut_len * self.period + cursor
+            data = self.data.loc[start_idx: end_idx, name]
+        else:
+            data = None
+        return data
+
+    def get_future_data(self, cursor=None):
+        """Возвращает все фичи для текущей точки, коотрые считаются 'будущими' """
+        if self.fut_len:
+            cursor = self.current_index if cursor is None else cursor
+            start_idx = cursor + self.period
+            end_idx = self.fut_len * self.period + cursor
+            data = self.data.loc[start_idx: end_idx, :]
+        else:
+            data = None
+        return data
+
+
+
+class DataPoint2:
     """DataPoint, базовая версия"""
     def __init__(self, data, data_future=None):
         self.data = data
@@ -86,7 +145,10 @@ class DataPoint:
         :param name: название колонки (lowest_ask, highest_bid или иное)
         :return: значение заданной цены
         """
-        data = self.data_f.loc[:, name]
+        if self.data_f is not None:
+            data = self.data_f.loc[:, name]
+        else:
+            data = None
         return data
 
     def get_future_data(self):
@@ -94,5 +156,8 @@ class DataPoint:
         Возвращает весь датасет будущих данных
         :return: pandas.z_core.frame.DataFrame
         """
-        return self.data_f
+        if self.data_future is not None:
+            return self.data_f
+        else:
+            return None
 

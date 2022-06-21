@@ -21,6 +21,96 @@ from .interface import ObservationBuilderInterface
 logger = logging.getLogger(__name__)
 
 
+class ObservationBuilderTrendIndicator(ObservationBuilderInterface):
+    SCALE_FACTOR = 10
+
+    def __init__(self, context):
+        self.context = context
+
+    def reset(self):
+        pass
+
+    def get(self, data_point):
+        # trade state feature
+        trade_state = self.context.get("is_open", domain="Trade")
+
+        # rates representation
+        current_price = self.context.get("highest_bid")
+        rates = (data_point.get_values("highest_bid").values / current_price - 1) * self.SCALE_FACTOR
+
+        # profit representation
+        profit = self._get_profit(data_point, trade_state)
+
+        # trend indicator representation
+        trend = self._get_trend()
+
+        # observation
+        static_data = [trade_state]
+
+        conv_data = np.concatenate([
+            rates.reshape(-1, 1),
+            profit.reshape(-1, 1),
+            trend.reshape(-1, 1),
+        ], axis=1)
+
+        observation = [
+            np.array(static_data, dtype=np.float32),
+            np.array(conv_data, dtype=np.float32)
+        ]
+        return observation
+
+    def _get_profit(self, data_point, trade_state):
+        trade = self.context.trade
+        timestamps = data_point.get_timestamps()
+
+        if trade is not None:
+            mask = [trade.open_ts < ts < trade.close_ts for ts in timestamps]
+            current_rates = data_point.get_values("highest_bid").values.copy()
+            profit = current_rates / trade.open_price - 1 - self.context.market_fee
+            profit = profit * mask * self.SCALE_FACTOR
+        else:
+            profit = np.zeros(len(timestamps))
+        return profit
+
+    def _get_ti(self):
+        pass
+
+    def _get_current_ti(self):
+        pass
+
+    def _build_ti(self):
+        pass
+
+
+    def _get_trend(self):
+        ti = []
+        # todo - потери времени на цикле.
+        #for i in range(self.context.data_point.offset):
+        for i in self.context.data_point.data.index:
+            current_value = self.context.data_point.get_value("highest_bid", cursor=i)
+
+            # todo Здесь похоже, что есть ошибка
+            future_values = self.context.data_point.get_future_values("highest_bid").values.reshape(-1)
+
+            diff = np.array(future_values / current_value - 1) * 100
+            coeffs = np.linspace(1.0, 0.5, len(diff))
+
+            if len(coeffs):
+                trend_indicator = np.average(diff, weights=coeffs)
+            else:
+                trend_indicator = 0
+            ti.append(trend_indicator)
+        return np.array(ti)
+
+
+
+
+
+
+
+
+
+
 class ObservationBuilderFutureFeature(ObservationBuilderInterface):
     """Билдер с 2-мя фичами. Без кэша.
     Работает дольше, чем с кэшом - на обучении скорость падает в 3 раза.
@@ -72,7 +162,8 @@ class ObservationBuilderFutureFeature(ObservationBuilderInterface):
     def _get_trend(self):
         ti = []
         # todo - потери времени на цикле.
-        for i in range(self.context.data_point.offset):
+        #for i in range(self.context.data_point.offset):
+        for i in self.context.data_point.data.index:
             current_value = self.context.data_point.get_value("highest_bid", cursor=i)
 
             # todo Здесь похоже, что есть ошибка

@@ -64,12 +64,13 @@ class AbstractObservationBuilderOpenSignal(ObservationBuilderInterface):
 
         # open trade feat value
         if self.context.trade is not None and self.context.trade.is_open:
-            open_feat_val = self.context.get("open_feat_val")
+            open_signal_value = self.context.get("open_signal_value")
         else:
-            open_feat_val = 0
+            #open_signal_value = 1
+            open_signal_value = 0
 
         # observation
-        observation = np.array([trade_state, open_signal, open_feat_val], dtype=np.float32)
+        observation = np.array([trade_state, open_signal, open_signal_value], dtype=np.float32)
         return observation
 
 
@@ -86,20 +87,23 @@ class AbstractObservationBuilderCompleteTrade(ObservationBuilderInterface):
         # trade state feature
         trade_state = self.context.get("is_open", domain="Trade")
 
-        # open signal value
+        # data
         open_signal = self.context.data_point.get_value("open_signal")
-
-        # close signal value
         close_signal = self.context.data_point.get_value("close_signal")
 
         # open trade feat value
         if self.context.trade is not None and self.context.trade.is_open:
-            open_feat_val = self.context.get("open_feat_val")
+            open_signal_value = self.context.get("open_signal_value")
+            if open_signal_value < 0:
+                open_signal_value = 0
+            else:
+                open_signal_value = 1
         else:
-            open_feat_val = 0
+            #open_signal_value = 1
+            open_signal_value = 0
 
         # observation
-        observation = np.array([trade_state, open_signal, close_signal, open_feat_val], dtype=np.float32)
+        observation = np.array([trade_state, open_signal, close_signal, open_signal_value], dtype=np.float32)
         return observation
 
 
