@@ -8,8 +8,8 @@
 import logging
 
 from ..context import BasicContext
-from ..tickers import Ticker_
-from ..observation_builder import ObservationBuilderBasicCache
+from ..tickers import TickerExtendedReward
+from ..observation_builder import ObservationBuilderBasic
 from ..metrics import MetricCollector
 from .core_error import CoreError
 
@@ -22,11 +22,10 @@ class CoreFacade:
     COLLECT_METRICS = True
     """Реализация тренера с базовым набором фичей, без предсказания."""
     def __init__(self, penalty=-2, reward=0, market_fee=0.0015):
-        self.context = BasicContext(market_fee)
+        self.context = BasicContext(market_fee=market_fee)
         self.metric_collector = MetricCollector()
-        self.action_controller = Ticker_(self.context, penalty=penalty, reward=reward, market_fee=market_fee)
-        self.observation = ObservationBuilderBasicCache(self.context)
-
+        self.action_controller = TickerExtendedReward(self.context, penalty=penalty, reward=reward)
+        self.observation = ObservationBuilderBasic(self.context)
         logger.debug("Instance initialized")
 
     @with_exception(CoreError)

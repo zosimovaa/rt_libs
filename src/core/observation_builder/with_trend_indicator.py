@@ -22,13 +22,20 @@ logger = logging.getLogger(__name__)
 
 
 class ObservationBuilderTrendIndicator(ObservationBuilderInterface):
+    """Билдер с 2-мя фичами"""
+
     SCALE_FACTOR = 10
+    TI_DECREASE_COEF_START = 1.
+    TI_DECREASE_COEF_END = .5
 
     def __init__(self, context):
         self.context = context
+        self.ti = None
+        self.ti_date = 0
 
     def reset(self):
-        pass
+        self.ti = None
+        self.ti_date = 0
 
     def get(self, data_point):
         # trade state feature
@@ -39,10 +46,10 @@ class ObservationBuilderTrendIndicator(ObservationBuilderInterface):
         rates = (data_point.get_values("highest_bid").values / current_price - 1) * self.SCALE_FACTOR
 
         # profit representation
-        profit = self._get_profit(data_point, trade_state)
+        profit = self._get_profit(data_point, self.context.trade)
 
         # trend indicator representation
-        trend = self._get_trend()
+        trend = self._get_trend_indicator(data_point)
 
         # observation
         static_data = [trade_state]
@@ -59,57 +66,66 @@ class ObservationBuilderTrendIndicator(ObservationBuilderInterface):
         ]
         return observation
 
-    def _get_profit(self, data_point, trade_state):
-        trade = self.context.trade
+    def _get_profit(self, data_point, trade):
         timestamps = data_point.get_timestamps()
 
         if trade is not None:
-            mask = [trade.open_ts < ts < trade.close_ts for ts in timestamps]
-            current_rates = data_point.get_values("highest_bid").values.copy()
+            mask = (timestamps > trade.open_ts) & (timestamps <= trade.close_ts)
+            current_rates = data_point.get_values("highest_bid").values
             profit = current_rates / trade.open_price - 1 - self.context.market_fee
             profit = profit * mask * self.SCALE_FACTOR
         else:
             profit = np.zeros(len(timestamps))
         return profit
 
-    def _get_ti(self):
-        pass
+    def _get_trend_indicator(self, dp):
 
-    def _get_current_ti(self):
-        pass
+        if self.ti is None:
+            # Запрос первого наблюдения
+            self.ti = self._build_ti(dp)
+            self.ti_date = dp.get_current_ts()
 
-    def _build_ti(self):
-        pass
+        elif dp.get_current_ts() > self.ti_date + dp.period:
+            # Были потери в данных
+            self.ti = self._build_ti(dp)
+            self.ti_date = dp.get_current_ts()
 
+        elif dp.get_current_ts() == self.ti_date:
+            # Повторное построение observation
+            pass
 
-    def _get_trend(self):
-        ti = []
-        # todo - потери времени на цикле.
-        #for i in range(self.context.data_point.offset):
-        for i in self.context.data_point.data.index:
-            current_value = self.context.data_point.get_value("highest_bid", cursor=i)
+        else:
+            # Запрос следующей точки
+            ti = self._get_ti(dp)
+            self.ti.append(ti)
+            self.ti_date = dp.get_current_ts()
 
-            # todo Здесь похоже, что есть ошибка
-            future_values = self.context.data_point.get_future_values("highest_bid").values.reshape(-1)
+        return np.array(self.ti)
+
+    def _get_ti(self, dp, cursor=None):
+        if cursor is None:
+            cursor = dp.get_current_ts()
+
+        if dp.fut_len > 0:
+
+            current_value = dp.get_value("highest_bid", cursor=cursor)
+            future_values = dp.get_future_values("highest_bid", cursor=cursor).values
 
             diff = np.array(future_values / current_value - 1) * 100
-            coeffs = np.linspace(1.0, 0.5, len(diff))
+            coeffs = np.linspace(self.TI_DECREASE_COEF_START, self.TI_DECREASE_COEF_END, len(diff))
 
-            if len(coeffs):
-                trend_indicator = np.average(diff, weights=coeffs)
-            else:
-                trend_indicator = 0
-            ti.append(trend_indicator)
-        return np.array(ti)
+            trend_indicator = np.average(diff, weights=coeffs)
+            return trend_indicator
+        else:
+            return 0
 
-
-
-
-
-
-
-
-
+    def _build_ti(self, dp):
+        ti_arr = deque(maxlen=len(dp.get_timestamps()))
+        indexes = dp.get_timestamps()
+        for cursor in indexes:
+            ti = self._get_ti(dp, cursor=cursor)
+            ti_arr.append(ti)
+        return ti_arr
 
 class ObservationBuilderFutureFeature(ObservationBuilderInterface):
     """Билдер с 2-мя фичами. Без кэша.

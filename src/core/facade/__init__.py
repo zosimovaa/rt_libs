@@ -1,8 +1,8 @@
 from .core_facade import CoreFacade
 from .core_error import CoreError
 
-from .core_basic import TrainCoreBasic, TradeCoreBasic
-from .core_trend_indicator import TrainCoreFutureFeature, TradeCoreFutureFeature
+from .core_basic import CoreBasic
+from .core_trend_indicator import CoreTrendIndicator
 
 from .abstract_core import TrainCoreAbstractSequence
 from .abstract_core import TrainCoreAbstractCloseSignal

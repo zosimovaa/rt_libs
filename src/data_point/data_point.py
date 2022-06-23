@@ -41,14 +41,16 @@ class DataPoint:
         return val
 
     def get_values(self, name):
-        data = self.data.loc[:self.current_index + 1, name]
+        data = self.data.loc[:self.current_index, name]
         return data
 
     def get_last_diffs(self, num, column='lowest_ask'):
-        row_idx_start = self.get_timestamps()[-num]
+        row_idx_start = self.get_timestamps()[-num-1]
         row_idx_end = self.current_index
-        diffs = self.data.diff(axis=0).loc[row_idx_start:row_idx_end, column]
-        return diffs.values
+
+        data = self.data.loc[row_idx_start : row_idx_end, column]
+        diffs = data.diff()
+        return diffs.values[1:]
 
     def get_current_data(self):
         return self.data.loc[:self.current_index + 1]

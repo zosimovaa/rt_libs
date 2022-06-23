@@ -69,7 +69,6 @@ class DataPointFactory:
 
 
 
-
 class DataPointFactory2:
     def __init__(self, dataset=None, period=300, n_observation_points=5, n_future_points=3, step_size=None):
         self.period = period

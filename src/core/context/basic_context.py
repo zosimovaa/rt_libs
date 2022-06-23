@@ -84,4 +84,5 @@ class BasicContext:
 
     def set_trade(self, trade):
         self.trade = trade
+        self.update_trade()
         logger.debug("Set new trade")

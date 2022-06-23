@@ -2,8 +2,8 @@ from .core_facade import CoreFacade
 
 # Task #5 - Simple
 from ..context import BasicContext
-from ..observation_builder import ObservationBuilderBasicCache
-from ..observation_builder import ObservationBuilderFutureFeatureCache
+from ..observation_builder import ObservationBuilderBasic
+from ..observation_builder import ObservationBuilderFutureFeatureCache, ObservationBuilderTrendIndicator
 from ..tickers import TickerBasic, TickerExtendedReward
 
 
@@ -13,7 +13,7 @@ class TrainCoreSyntheticSimple(CoreFacade):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)
         self.context = BasicContext()
         self.action_controller = TickerBasic(self.context, penalty=penalty, reward=reward)
-        self.observation = ObservationBuilderBasicCache(self.context)
+        self.observation = ObservationBuilderBasic(self.context)
 
 
 class TrainCoreSyntheticExtendedReward(CoreFacade):
@@ -22,7 +22,7 @@ class TrainCoreSyntheticExtendedReward(CoreFacade):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)
         self.context = BasicContext()
         self.action_controller = TickerExtendedReward(self.context, penalty=penalty, reward=reward)
-        self.observation = ObservationBuilderBasicCache(self.context)
+        self.observation = ObservationBuilderBasic(self.context)
 
 
 class TrainCoreSyntheticTrendIndicator(CoreFacade):
@@ -31,4 +31,4 @@ class TrainCoreSyntheticTrendIndicator(CoreFacade):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)
         self.context = BasicContext()
         self.action_controller = TickerExtendedReward(self.context, penalty=penalty, reward=reward)
-        self.observation = ObservationBuilderFutureFeatureCache(self.context)
+        self.observation = ObservationBuilderTrendIndicator(self.context)

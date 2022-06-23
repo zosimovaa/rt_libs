@@ -46,9 +46,8 @@ class TradeAction(BaseAction):
 
 
 class AbstractTradeAction(TradeAction):
-    """Класс описывает торговую операцию"""
+    """Класс описывает торговую операцию для первого этапа обучения на абстрактных данных"""
     def __init__(self, context):
-        """Инстанс класса создается при открытии торговой операции"""
         TradeAction.__init__(self, context)
 
     def get_profit(self):

@@ -66,7 +66,6 @@ class AbstractObservationBuilderOpenSignal(ObservationBuilderInterface):
         if self.context.trade is not None and self.context.trade.is_open:
             open_signal_value = self.context.get("open_signal_value")
         else:
-            #open_signal_value = 1
             open_signal_value = 0
 
         # observation
@@ -99,7 +98,6 @@ class AbstractObservationBuilderCompleteTrade(ObservationBuilderInterface):
             else:
                 open_signal_value = 1
         else:
-            #open_signal_value = 1
             open_signal_value = 0
 
         # observation

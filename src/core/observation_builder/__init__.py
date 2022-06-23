@@ -9,5 +9,4 @@ from .basic import ObservationBuilderBasic
 from .with_trend_indicator import ObservationBuilderFutureFeature
 from .with_trend_indicator import ObservationBuilderTrendIndicator
 
-from .basic import ObservationBuilderBasicCache
 from .with_trend_indicator import ObservationBuilderFutureFeatureCache

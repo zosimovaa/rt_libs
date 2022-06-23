@@ -1,3 +1,6 @@
+"""
+В модуле реализованы Ticker для расчета награды в сценариях торговли на абстрактных данных.
+"""
 import logging
 
 from ..actions import BadAction, AbstractTradeAction
@@ -7,8 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractTickerBasic:
-    """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции
-    Используется в подготовительных сценариях
+    """
+    Класс реализует логику расчета награды для сценариев обучения корректной последовательности и
+    реакции на сигнал продажи.
     """
 
     handler = {
@@ -96,6 +100,9 @@ class AbstractTickerBasic:
 
 
 class AbstractTickerOpenSignal(AbstractTickerBasic):
+    """
+    Класс реализует логику расчета награды для сценария обучения на сигнал покупки
+    """
     def __init__(self, *args, **kwargs):
         AbstractTickerBasic.__init__(self, *args, **kwargs)
 
@@ -140,6 +147,9 @@ class AbstractTickerOpenSignal(AbstractTickerBasic):
 
 
 class AbstractTickerCompleteTrade(AbstractTickerBasic):
+    """
+    Класс реализует логику расчета награды для сценария обучения на сигналы покупки и продажи.
+    """
     def __init__(self, *args, **kwargs):
         AbstractTickerBasic.__init__(self, *args, **kwargs)
 

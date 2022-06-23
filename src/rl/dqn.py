@@ -126,7 +126,7 @@ class DQN:
                 self.epsilon = max(self.epsilon, self.epsilon_min)
 
                 # Apply the sampled action in our environment
-                state_next, reward, done, _ = self.env.period(action)
+                state_next, reward, done, _ = self.env.step(action)
                 state_next = np.array(state_next)
 
                 self.env.render() #; Adding this line would show the attempts

@@ -2,8 +2,8 @@ from .actions import BadAction, TradeAction
 
 from .facade import CoreFacade
 from .facade import CoreError
-from .facade import TrainCoreBasic, TradeCoreBasic
-from .facade import TrainCoreFutureFeature, TradeCoreFutureFeature
+from .facade import CoreBasic
+from .facade import CoreTrendIndicator
 
 from .facade import TrainCoreAbstractSequence
 from .facade import TrainCoreAbstractCloseSignal
