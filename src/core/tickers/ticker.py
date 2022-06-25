@@ -49,7 +49,7 @@ class TickerBasic:
     def _action_waiting(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(0))
+            action_result = BadAction(self.context)
         else:
             reward = self.reward
             action_result = None
@@ -58,7 +58,7 @@ class TickerBasic:
     def _action_open_trade(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(1))
+            action_result = BadAction(self.context)
         else:
             self.trade = TradeAction(self.context)
             self.context.set_trade(self.trade)
@@ -74,7 +74,7 @@ class TickerBasic:
             action_result = None
         else:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(2))
+            action_result = BadAction(self.context)
         return reward, action_result
 
     def _action_close_trade(self, ts, is_open):
@@ -86,7 +86,7 @@ class TickerBasic:
             action_result = self.trade
         else:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(3))
+            action_result = BadAction(self.context)
         return reward, action_result
 
 
@@ -110,7 +110,7 @@ class TickerExtendedReward(TickerBasic):
     def _action_waiting(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(0))
+            action_result = BadAction(self.context)
         else:
             last_data_points_diff = self.context.data_point.get_last_diffs(self.NUM_MEAN_OBS)
             rates_diff_mean = np.mean(last_data_points_diff)
@@ -128,5 +128,5 @@ class TickerExtendedReward(TickerBasic):
             action_result = None
         else:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(2))
+            action_result = BadAction(self.context)
         return reward, action_result
