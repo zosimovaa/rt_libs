@@ -1,13 +1,11 @@
-import pytz
 import logging
-import datetime
+
 import numpy as np
 import pandas as pd
+from basic_application import with_exception
 
 from .dp_abstract import AbstractDataProvider
 from .dp_abstract import DataProviderError
-from basic_application import with_exception
-from .clickhouse_connector import ClickHouseConnector
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +52,7 @@ WITH
         
 """
 
+
 class DbDataProvider(AbstractDataProvider):
 
     def __init__(self, conn):
@@ -91,8 +90,5 @@ class DbDataProvider(AbstractDataProvider):
         data["highest_bid"] = data["highest_bid"].astype(np.float32)
         data = data.set_index("ts")
 
-
-
         data = data.replace(to_replace=0, method='ffill')
-
         return data

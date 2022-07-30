@@ -18,6 +18,7 @@ import numpy as np
 
 from basic_application import with_exception
 
+
 class DataPointError(Exception):
     pass
 

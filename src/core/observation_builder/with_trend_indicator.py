@@ -29,11 +29,13 @@ class ObservationBuilderTrendIndicator(ObservationBuilderInterface):
     TI_DECREASE_COEF_END = .5
 
     def __init__(self, context):
+        """Конструктор класса"""
         self.context = context
         self.ti = None
         self.ti_date = 0
 
     def reset(self):
+        """Сброс параметров"""
         self.ti = None
         self.ti_date = 0
 

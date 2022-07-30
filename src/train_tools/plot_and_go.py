@@ -5,10 +5,10 @@ import matplotlib.dates as mdates
 import datetime
 
 
-def plot_and_go(dataset, title="Title is here", fig_x=17, fig_y=5, dpi=50):
+def plot_and_go(dataset, column="lowest_ask", title="Title is here", fig_x=17, fig_y=5, dpi=50):
     fig, ax = plt.subplots(figsize=(fig_x, fig_y), dpi=dpi)
 
-    y = dataset["lowest_ask"]
+    y = dataset[column]
     x = [datetime.datetime.utcfromtimestamp(ts) for ts in dataset.index]
 
     formatter = mdates.DateFormatter("%Y-%d-%m %H:%M")
