@@ -24,40 +24,49 @@ class DataPointError(Exception):
 
 
 class DataPoint:
-    def __init__(self, data, n_future_points=0):
+    def __init__(self, data, n_history_points=10, n_future_points=0):
         self.data = data
-        self.current_index = self.data.index[-(n_future_points + 1)]
-        self.obs_len = len(data) - n_future_points
+
         self.fut_len = n_future_points
+        self.hist_len = n_history_points
+        self.obs_len = len(data) - n_future_points - n_history_points
+
+        self.up_idx = self.data.index[-(n_future_points + 1)]
+        self.low_idx = self.data.index[n_history_points]
+
         self.period = self.data.index[1] - self.data.index[0]
 
     @with_exception(DataPointError)
     def get_current_ts(self):
-        return self.current_index
+        return self.up_idx
 
     @with_exception(DataPointError)
     def get_timestamps(self):
-        if self.fut_len:
+        return self.data.index[self.low_idx : self.up_idx]
+
+
+
+        """if self.fut_len:
             return self.data.index[:-self.fut_len].values
         else:
-            return self.data.index.values
+            return self.data.index.values"""
 
     @with_exception(DataPointError)
     def get_value(self, name, cursor=None):
         if cursor is None:
-            cursor = self.current_index
+            cursor = self.up_idx
         val = self.data.loc[cursor, name]
         return val
 
     @with_exception(DataPointError)
     def get_values(self, name):
-        data = self.data.loc[:self.current_index, name]
+        data = self.data.loc[:self.up_idx, name]
         return data
 
     @with_exception(DataPointError)
     def get_last_diffs(self, num, column='lowest_ask'):
         row_idx_start = self.get_timestamps()[-num-1]
-        row_idx_end = self.current_index
+        row_idx_end = self.up_idx
 
         data = self.data.loc[row_idx_start : row_idx_end, column]
         diffs = data.diff()
@@ -65,12 +74,12 @@ class DataPoint:
 
     @with_exception(DataPointError)
     def get_current_data(self):
-        return self.data.loc[:self.current_index + 1]
+        return self.data.loc[:self.up_idx + 1]
 
     @with_exception(DataPointError)
     def get_future_values(self, name, cursor=None):
         if self.fut_len:
-            cursor = self.current_index if cursor is None else cursor
+            cursor = self.up_idx if cursor is None else cursor
             start_idx = cursor + self.period
             end_idx = self.fut_len * self.period + cursor
             data = self.data.loc[start_idx: end_idx, name]
@@ -82,7 +91,7 @@ class DataPoint:
     def get_future_data(self, cursor=None):
         """Возвращает все фичи для текущей точки, коотрые считаются 'будущими' """
         if self.fut_len:
-            cursor = self.current_index if cursor is None else cursor
+            cursor = self.up_idx if cursor is None else cursor
             start_idx = cursor + self.period
             end_idx = self.fut_len * self.period + cursor
             data = self.data.loc[start_idx: end_idx, :]
