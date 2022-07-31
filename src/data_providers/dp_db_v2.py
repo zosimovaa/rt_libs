@@ -32,8 +32,10 @@ SELECT
 	bids,
 	buy_vol,
 	sell_vol,
+	toFloat32(buy_vol+sell_vol) as total_col,
 	buy_num,
-	sell_num
+	sell_num,
+	toUInt32(buy_num+sell_num) as total_num
 
 FROM 
 	(SELECT 
@@ -112,6 +114,8 @@ ORDER BY tb_ts.ts ASC"""
 
 class DbDataProviderV2(AbstractDataProvider):
     GAPS_THRESHOLD = 0.3
+    HISTORY_DEPTH = 100
+
 
     DICT_COLUMNS = ["asks", "bids"]
     STR_COLUMNS = ["pair"]
@@ -125,6 +129,8 @@ class DbDataProviderV2(AbstractDataProvider):
         self.conn = conn
         self.raw_data = None
         self.col_names = None
+
+
 
     @with_exception(DataProviderError)
     def get(self, start, end, period, pair=None, raise_errors=False):
