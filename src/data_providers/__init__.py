@@ -1,10 +1,15 @@
-from .batch_task_handler import BatchTaskHandler
-from .clickhouse_connector import ClickHouseConnector
-from .dp_abstract import AbstractDataProvider
-from .dp_abstract import DataProviderError, TooManyGapsError, UpToDateError
+"""
+data_providers - реализует доступ к данным по котировкам.
+Сейчас есть 2 вида провайдеров, которые тянут инфо с биржи или из БД
 
-from .dp_db_v1 import DbDataProvider
-from. dp_db_v1_universal import DbDataProviderUniversal
-from .dp_db_queries import QUERY_WITH_OB
-from .dp_db_v2 import DbDataProviderV2
+Базовые метод доступа к данным - по периодам (кейс с трейдингом)
+Т.е. для выборки данных указываем ts, период, кол-во периодов.
+
+"""
+from .clickhouse_connector import ClickHouseConnector
+from .batch_task_handler import BatchTaskHandler
+from .abstract_provider import AbstractDataProvider
+from .dp_db_rt5 import DbDataProviderRT5
+from .errors import DataProviderError, TooManyGapsError, UpToDateError
+
 

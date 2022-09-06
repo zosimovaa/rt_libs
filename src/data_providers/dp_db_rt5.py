@@ -8,22 +8,23 @@ import numpy as np
 import pandas as pd
 from basic_application import with_exception
 
-from .dp_abstract import AbstractDataProvider
-from .dp_abstract import DataProviderError, TooManyGapsError, UpToDateError
+from data_providers.abstract_provider import AbstractDataProvider
+from data_providers.errors import DataProviderError, TooManyGapsError, UpToDateError
 
 logger = logging.getLogger(__name__)
 
 QUERY = """
 WITH
-
+    toUInt32(%(ts)s) AS ts_max,
+    toUInt32(%(depth)s) AS depth,
     toUInt32(%(period)s) AS p_period,
-    toUInt32(%(start)s) AS ts_min_,
-    toUInt32(%(end)s) AS ts_max,
     %(pair)s AS p_pair,
+   
+    toUInt32(ts_max - depth * p_period) AS ts_min
 
-    toUInt32(ts_min_ - p_period) AS ts_min
 
-SELECT 
+SELECT
+	# Соединение данных и индекса
 	tb_ts.ts as ts,
 	FROM_UNIXTIME(toUInt32(tb_ts.ts)) as dt,
 	lowest_ask,
@@ -32,12 +33,14 @@ SELECT
 	bids,
 	buy_vol,
 	sell_vol,
-	toFloat32(buy_vol+sell_vol) as total_col,
+	toFloat32(buy_vol+sell_vol) as total_vol,
 	buy_num,
 	sell_num,
 	toUInt32(buy_num+sell_num) as total_num
 
+
 FROM 
+	# Данные
 	(SELECT 
 		tb_orderbook.ts as ts,
 		tb_orderbook.lowest_ask as lowest_ask,
@@ -51,7 +54,6 @@ FROM
 		tb_trades.sell_num as sell_num
 
 	FROM     
-
 
 		(SELECT 
 			period_gr + ts_min as ts,
@@ -70,7 +72,7 @@ FROM
 				asks,
 				bids
 			FROM orderbook 
-			WHERE ts > ts_min and ts <= ts_max and pair=p_pair
+			WHERE ts > ts_min and ts <= ts_max and symbol=p_pair
 			ORDER BY ts_group DESC
 			) AS tb_orderbook_ungrouped
 		GROUP BY period_gr
@@ -89,52 +91,47 @@ FROM
 	FROM
 		(SELECT
 		    CEIL((`ts`-`ts_min`) / p_period) * p_period  AS `period`,
-		    --`type` as `type_gr`,
-		    --`rate` as rate_gr,
-		    --`amount` as `amount_gr`,
-		    --`total` as `total_ts`,
-
-		    if(`type`='buy', total, 0) as `buy_vol`,
-		  	if(`type`='buy', 1, 0) as `buy_num`,
-		    if(`type`='sell', total, 0) as `sell_vol`,
-		    if(`type`='sell', 1, 0) as `sell_num`
+		    if(`takerSide`='BUY', quantity, 0) as `buy_vol`,
+		  	if(`takerSide`='BUY', 1, 0) as `buy_num`,
+		    if(`takerSide`='SELL', quantity, 0) as `sell_vol`,
+		    if(`takerSide`='SELL', 1, 0) as `sell_num`
 
 		FROM trades
-		WHERE ts > ts_min AND ts <= ts_max AND pair=p_pair) AS tb_trades_ungrouped
+		WHERE ts > ts_min AND ts <= ts_max AND symbol=p_pair) AS tb_trades_ungrouped
 	GROUP BY period
 	) AS tb_trades ON tb_trades.ts = tb_orderbook.ts
+
 
 	ORDER BY ts ASC ) AS tb_ob_trades
 
 	RIGHT JOIN
-
+	# Индекс
 	(SELECT arrayJoin (range(toUInt32(ts_min+p_period), toUInt32(ts_max+p_period), p_period)) AS ts) as tb_ts on tb_ts.ts = tb_ob_trades.ts
-ORDER BY tb_ts.ts ASC"""
+ORDER BY tb_ts.ts ASC
+"""
 
 
-class DbDataProviderV2(AbstractDataProvider):
-    GAPS_THRESHOLD = 0.3
-    HISTORY_DEPTH = 100
-
+class DbDataProviderRT5(AbstractDataProvider):
+    #GAPS_THRESHOLD = 0.3
 
     DICT_COLUMNS = ["asks", "bids"]
-    STR_COLUMNS = ["pair"]
-    INT_COLUMNS = ["ts", "buy_num", "sell_num"]
+    STR_COLUMNS = []
+    INT_COLUMNS = ["ts", "buy_num", "sell_num", "total_num"]
     WO_CONVERT = ["dt"]
     INDEX_COL = "ts"
 
     QUERY = QUERY
 
-    def __init__(self, conn):
+    def __init__(self, conn, gaps_threshold=0.):
         self.conn = conn
         self.raw_data = None
         self.col_names = None
-
-
+        self.gaps_threshold = gaps_threshold
 
     @with_exception(DataProviderError)
-    def get(self, start, end, period, pair=None, raise_errors=False):
-        params = self._build_params(start, end, period, pair)
+    def get(self, ts, period, num_of_periods, pair, raise_errors=False):
+        params = self._build_params(ts, period, num_of_periods, pair)
+
         self.conn.cursor.execute(self.QUERY, parameters=params)
         self.raw_data = self.conn.cursor.fetchall()
         self.col_names = [col[0] for col in self.conn.cursor.columns_with_types]
@@ -142,23 +139,15 @@ class DbDataProviderV2(AbstractDataProvider):
         data = self._transform(self.raw_data, self.col_names)
         if raise_errors:
             self._check_data(data)
-
         data = self._fill_gaps(data)
 
         return data
 
-    def get_by_periods(self, ts, period, num_of_period, pair=None, raise_errors=False) -> pd.DataFrame:
-        ts_end = self.date_to_unix_ts_in_utc(ts)
-        start = ts_end - period * (num_of_period - 1)
-        end = ts_end
-        result = self.get(start, end, period, pair=pair, raise_errors=raise_errors)
-        return result
-
-    def _build_params(self, start, end, period, pair):
+    def _build_params(self, ts, period, num_of_periods, pair):
         params = dict()
-        params["start"] = self.date_to_unix_ts_in_utc(start)
-        params["end"] = self.date_to_unix_ts_in_utc(end)
+        params["ts"] = self.date_to_unix_ts_in_utc(ts)
         params["period"] = period
+        params["depth"] = num_of_periods
         params["pair"] = pair
         return params
 
@@ -178,24 +167,26 @@ class DbDataProviderV2(AbstractDataProvider):
 
         if self.INDEX_COL in data.columns:
             data = data.set_index(self.INDEX_COL)
-
         return data
 
     def _check_data(self, data):
-        zero_counts = sum(data["highest_bid"] == 0)
-        data_length = len(data["highest_bid"])
-
-        if zero_counts / data_length > self.GAPS_THRESHOLD:
-            raise TooManyGapsError(zero_counts, data_length)
-
         highest_bid = data.loc[max(data.index), "highest_bid"]
         if not highest_bid:
             raise UpToDateError()
+
+        zero_counts = sum(data["highest_bid"] == 0)
+        data_length = len(data["highest_bid"])
+
+        if zero_counts / data_length > self.gaps_threshold:
+            raise TooManyGapsError(zero_counts, data_length)
 
     def _fill_gaps(self, data):
         data['lowest_ask'] = data['lowest_ask'].replace(to_replace=0, method='bfill')
         data['highest_bid'] = data['highest_bid'].replace(to_replace=0, method='bfill')
         data['asks'] = data['asks'].replace(to_replace=dict(), method='bfill')
         data['bids'] = data['bids'].replace(to_replace=dict(), method='bfill')
-
         return data
+
+
+if __name__ == "__main__":
+    print("go!")

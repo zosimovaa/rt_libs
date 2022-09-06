@@ -1,12 +1,12 @@
 # Реализации классов билдера для первой части задачи - для абстрактных операций.
-from .abstract_builder import AbstractObservationBuilderSequencePrediction
-from .abstract_builder import AbstractObservationBuilderCloseSignal
-from .abstract_builder import AbstractObservationBuilderOpenSignal
-from .abstract_builder import AbstractObservationBuilderCompleteTrade
+from .v0_abstract_builder import AbstractObservationBuilderSequencePrediction
+from .v0_abstract_builder import AbstractObservationBuilderCloseSignal
+from .v0_abstract_builder import AbstractObservationBuilderOpenSignal
+from .v0_abstract_builder import AbstractObservationBuilderCompleteTrade
 
+from .v1_basic import ObservationBuilderBasic
+from .v1_with_trend_indicator import ObservationBuilderTrendIndicator
 
-from .basic import ObservationBuilderBasic
-from .with_trend_indicator import ObservationBuilderFutureFeature
-from .with_trend_indicator import ObservationBuilderTrendIndicator
-
-from .with_trend_indicator import ObservationBuilderFutureFeatureCache
+from .v2_trades import ObservationBuilderV2TradesSimpleBalance
+from .v2_trades import ObservationBuilderV2TradesBuySellFeats
+from .v2_trades import ObservationBuilderV2TradesRelativeBalance

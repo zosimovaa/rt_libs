@@ -4,7 +4,7 @@ import pandas as pd
 from collections import deque
 
 from data_point import DataPointFactory, DataPointFactoryError
-from core.observation_builder.basic import ObservationBuilderBasic
+from core.observation_builder.v1_basic import ObservationBuilderBasic
 from core.context import BasicContext
 from core.actions import TradeAction
 

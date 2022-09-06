@@ -3,11 +3,11 @@ from .core_facade import CoreFacade
 # Task #5 - Simple
 from ..context import BasicContext
 from ..observation_builder import ObservationBuilderBasic
-from ..observation_builder import ObservationBuilderFutureFeatureCache, ObservationBuilderTrendIndicator
+from ..observation_builder import ObservationBuilderTrendIndicator
 from ..tickers import TickerBasic, TickerExtendedReward
 
 
-class TrainCoreSyntheticSimple(CoreFacade):
+class CoreV1SyntheticSimple(CoreFacade):
     """Реализация трейдера с базовым набором фичей, с предсказанием."""
     def __init__(self, penalty=-2, reward=0, market_fee=0.0015):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)
@@ -16,7 +16,7 @@ class TrainCoreSyntheticSimple(CoreFacade):
         self.observation = ObservationBuilderBasic(self.context)
 
 
-class TrainCoreSyntheticExtendedReward(CoreFacade):
+class CoreV1SyntheticExtendedReward(CoreFacade):
     """Реализация трейдера с базовым набором фичей, с предсказанием."""
     def __init__(self, penalty=-2, reward=0, market_fee=0.0015):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)
@@ -25,7 +25,7 @@ class TrainCoreSyntheticExtendedReward(CoreFacade):
         self.observation = ObservationBuilderBasic(self.context)
 
 
-class TrainCoreSyntheticTrendIndicator(CoreFacade):
+class CoreV1SyntheticTrendIndicator(CoreFacade):
     """Реализация трейдера с базовым набором фичей, с предсказанием."""
     def __init__(self, penalty=-2, reward=0, market_fee=0.0015):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)

@@ -42,14 +42,10 @@ class DataPoint:
 
     @with_exception(DataPointError)
     def get_timestamps(self):
-        return self.data.index[self.low_idx : self.up_idx]
-
-
-
-        """if self.fut_len:
-            return self.data.index[:-self.fut_len].values
+        if self.fut_len:
+            return self.data.index[self.hist_len: -self.fut_len].values
         else:
-            return self.data.index.values"""
+            return self.data.index[self.hist_len:].values
 
     @with_exception(DataPointError)
     def get_value(self, name, cursor=None):
@@ -60,7 +56,7 @@ class DataPoint:
 
     @with_exception(DataPointError)
     def get_values(self, name):
-        data = self.data.loc[:self.up_idx, name]
+        data = self.data.loc[self.low_idx : self.up_idx, name]
         return data
 
     @with_exception(DataPointError)
@@ -74,7 +70,7 @@ class DataPoint:
 
     @with_exception(DataPointError)
     def get_current_data(self):
-        return self.data.loc[:self.up_idx + 1]
+        return self.data.loc[self.low_idx  : self.up_idx + 1]
 
     @with_exception(DataPointError)
     def get_future_values(self, name, cursor=None):
@@ -94,6 +90,34 @@ class DataPoint:
             cursor = self.up_idx if cursor is None else cursor
             start_idx = cursor + self.period
             end_idx = self.fut_len * self.period + cursor
+            data = self.data.loc[start_idx: end_idx, :]
+        else:
+            data = None
+        return data
+
+
+    @with_exception(DataPointError)
+    def get_hist_values(self, name, cursor=None):
+        if self.hist_len:
+            cursor = self.low_idx if cursor is None else cursor
+
+            start_idx = max(cursor - self.period * self.hist_len, min(self.data.index))
+            end_idx = cursor - self.period
+
+            data = self.data.loc[start_idx: end_idx, name]
+        else:
+            data = None
+        return data
+
+    @with_exception(DataPointError)
+    def get_hist_data(self, cursor=None):
+        """Возвращает все фичи для текущей точки, коотрые считаются 'будущими' """
+        if self.hist_len:
+            cursor = self.low_idx if cursor is None else cursor
+
+            start_idx = max(cursor - self.period * self.hist_len, min(self.data.index))
+            end_idx = cursor - self.period
+
             data = self.data.loc[start_idx: end_idx, :]
         else:
             data = None

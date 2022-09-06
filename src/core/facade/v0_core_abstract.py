@@ -20,7 +20,7 @@ from ..tickers import AbstractTickerCompleteTrade
 from ..observation_builder import AbstractObservationBuilderCompleteTrade
 
 
-class TrainCoreAbstractSequence(CoreFacade):
+class CoreV0AbstractSequence(CoreFacade):
     """Реализация трейдера с базовым набором фичей, с предсказанием."""
     def __init__(self, penalty=-2, reward=0, market_fee=0.0015):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)
@@ -29,7 +29,7 @@ class TrainCoreAbstractSequence(CoreFacade):
         self.observation = AbstractObservationBuilderSequencePrediction(self.context)
 
 
-class TrainCoreAbstractCloseSignal(CoreFacade):
+class CoreV0AbstractCloseSignal(CoreFacade):
     """Реализация трейдера с базовым набором фичей, с предсказанием."""
     def __init__(self, penalty=-2, reward=0, market_fee=0.0015):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)
@@ -38,7 +38,7 @@ class TrainCoreAbstractCloseSignal(CoreFacade):
         self.observation = AbstractObservationBuilderCloseSignal(self.context)
 
 
-class TrainCoreAbstractOpenSignal(CoreFacade):
+class CoreV0AbstractOpenSignal(CoreFacade):
     """Реализация трейдера с базовым набором фичей, с предсказанием."""
     def __init__(self, penalty=-2, reward=0, market_fee=0.0015):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)
@@ -47,7 +47,7 @@ class TrainCoreAbstractOpenSignal(CoreFacade):
         self.observation = AbstractObservationBuilderOpenSignal(self.context)
 
 
-class TrainCoreAbstractCompleteTrade(CoreFacade):
+class CoreV0AbstractCompleteTrade(CoreFacade):
     """Реализация трейдера с базовым набором фичей, с предсказанием."""
     def __init__(self, penalty=-2, reward=0, market_fee=0.0015):
         CoreFacade.__init__(self, penalty=penalty, reward=reward, market_fee=market_fee)

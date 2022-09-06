@@ -2,17 +2,21 @@ from .actions import BadAction, TradeAction
 
 from .facade import CoreFacade
 from .facade import CoreError
-from .facade import CoreBasic
-from .facade import CoreTrendIndicator
 
-from .facade import TrainCoreAbstractSequence
-from .facade import TrainCoreAbstractCloseSignal
-from .facade import TrainCoreAbstractOpenSignal
-from .facade import TrainCoreAbstractCompleteTrade
+from .facade import CoreV0AbstractSequence
+from .facade import CoreV0AbstractCloseSignal
+from .facade import CoreV0AbstractOpenSignal
+from .facade import CoreV0AbstractCompleteTrade
 
-from .facade import TrainCoreSyntheticSimple
-from .facade import TrainCoreSyntheticExtendedReward
+from .facade import CoreV1Basic
+from .facade import CoreV1SyntheticSimple
+from .facade import CoreV1SyntheticExtendedReward
+from .facade import CoreV1SyntheticTrendIndicator
+from .facade import CoreV1TrendIndicator
 
-from .facade import TrainCoreSyntheticTrendIndicator
+from .facade import CoreV2TradesSimpleBalance
+from .facade import CoreV2TradesBuySellFeats
+from .facade import CoreV2TradesRelativeBalance
+
 
 
