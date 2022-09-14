@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class TradeStateFeature(AbstractFeature):
+    """Достает из контекста текущее состояние торговой операции"""
     def __init__(self, context):
         super().__init__(context)
 

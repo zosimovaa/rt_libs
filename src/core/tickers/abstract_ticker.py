@@ -109,7 +109,7 @@ class AbstractTickerOpenSignal(AbstractTickerBasic):
     def _action_open_trade(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(1))
+            action_result = BadAction(self.context)
         else:
 
             open_signal_value = self.context.get("lowest_ask")
@@ -142,7 +142,7 @@ class AbstractTickerOpenSignal(AbstractTickerBasic):
 
         else:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(3))
+            action_result = BadAction(self.context)
         return reward, action_result
 
 
@@ -156,7 +156,7 @@ class AbstractTickerCompleteTrade(AbstractTickerBasic):
     def _action_open_trade(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(1))
+            action_result = BadAction(self.context)
         else:
 
             open_signal_value = self.context.get("lowest_ask")
@@ -190,5 +190,5 @@ class AbstractTickerCompleteTrade(AbstractTickerBasic):
             action_result = self.trade
         else:
             reward = self._get_penalty()
-            action_result = BadAction(ts, self.handler.get(3))
+            action_result = BadAction(self.context)
         return reward, action_result

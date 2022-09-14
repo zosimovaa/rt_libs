@@ -227,7 +227,7 @@ class ObservationBuilderV2OrderbookDiffFeature(ObservationBuilderInterface):
         trade_state = self.trade_state_feat.get()
         rates = self.rate_feat.get()
         profit = self.profit_feat.get()
-        orderbook_diff = self.diff_feat.get_cleared(norm=True, clip_edge=4)
+        orderbook_diff = self.diff_feat.get_cleared(norm=False, clip_edge=4)
 
         # ------------------------------------------
         # observation
@@ -236,12 +236,16 @@ class ObservationBuilderV2OrderbookDiffFeature(ObservationBuilderInterface):
         conv_data_basic = np.concatenate([
             rates.reshape(-1, 1),
             profit.reshape(-1, 1),
+        ], axis=1)
+
+        conv_data_orderbook = np.concatenate([
             orderbook_diff.reshape(-1, 1)
         ], axis=1)
 
         observation = [
             np.array(static_data, dtype=np.float32),
-            np.array(conv_data_basic, dtype=np.float32)
+            np.array(conv_data_basic, dtype=np.float32),
+            np.array(conv_data_orderbook, dtype=np.float32)
         ]
 
         return observation

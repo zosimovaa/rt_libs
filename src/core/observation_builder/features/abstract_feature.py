@@ -45,7 +45,7 @@ class AbstractFeatureWithHistory(AbstractFeature):
         self.data = None
         self.last_update = None
 
-    def get(self, norm=False):
+    def get(self):
         """Определяет логику формирования данных"""
         dp = self.context.data_point
 

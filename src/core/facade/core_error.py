@@ -1,2 +1,2 @@
-class CoreError(Exception):
+class RTCoreError(Exception):
     pass
