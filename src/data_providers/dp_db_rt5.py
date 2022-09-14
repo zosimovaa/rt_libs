@@ -129,7 +129,7 @@ class DbDataProviderRT5(AbstractDataProvider):
         self.gaps_threshold = gaps_threshold
 
     @with_exception(DataProviderError)
-    def get(self, ts, period, num_of_periods, pair, raise_errors=False):
+    def get(self, ts, period, num_of_periods, pair, raise_errors=False, fill_gaps=True):
         params = self._build_params(ts, period, num_of_periods, pair)
 
         self.conn.cursor.execute(self.QUERY, parameters=params)
@@ -139,7 +139,9 @@ class DbDataProviderRT5(AbstractDataProvider):
         data = self._transform(self.raw_data, self.col_names)
         if raise_errors:
             self._check_data(data)
-        data = self._fill_gaps(data)
+
+        if fill_gaps:
+            data = self._fill_gaps(data)
 
         return data
 

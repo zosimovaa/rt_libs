@@ -1,4 +1,4 @@
-from .i_abstract_feature import AbstractFeature, AbstractFeatureWithHistory
+from .abstract_feature import AbstractFeature, AbstractFeatureWithHistory
 
 from .basic_features import TradeStateFeature
 from .basic_features import Rates1DFeature
@@ -8,5 +8,7 @@ from .trend_indicator_features import TrendIndicatorFeature
 
 from .volume_features import TradeBalanceFeature
 
-from .orderbook_features import OrderbookAsksFeature
-from .orderbook_features import OrderbookBidsFeature
+from .orderbook_v1_raw import OrderbookAsksFeature
+from .orderbook_v1_raw import OrderbookBidsFeature
+
+from .orderbook_v2_diff import OrderbookDiffFeature

@@ -1,4 +1,4 @@
-from .i_abstract_feature import AbstractFeature
+from .abstract_feature import AbstractFeature
 import logging
 import numpy as np
 
@@ -41,7 +41,9 @@ class ProfitFeature(AbstractFeature):
         data_point = self.context.data_point
         trade = self.context.trade
 
-        if trade is not None:
+        trade_state = self.context.get("is_open", domain="Trade")
+
+        if trade_state:
             mask = (timestamps > trade.open_ts) & (timestamps <= trade.close_ts)
             current_rates = data_point.get_values("highest_bid").values
             profit = current_rates / trade.open_price - 1 - self.context.market_fee

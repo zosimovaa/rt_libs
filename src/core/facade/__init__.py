@@ -13,8 +13,7 @@ from .v1_core_synthetic import CoreV1SyntheticSimple
 from .v1_core_synthetic import CoreV1SyntheticExtendedReward
 from .v1_core_synthetic import CoreV1SyntheticTrendIndicator
 
-from .v2_core_trades import CoreV2TradesSimpleBalance
-from .v2_core_trades import CoreV2TradesBuySellFeats
-from .v2_core_trades import CoreV2TradesRelativeBalance
-
-
+from .v2_core_trades import CoreV2TradeBalance
+from .v2_core_trades import CoreV2Orderbook, CoreV2OrderbookV2
+from .v2_core_trades import CoreV2ObTb
+from .v2_core_trades import CoreV2ObDiffFeat

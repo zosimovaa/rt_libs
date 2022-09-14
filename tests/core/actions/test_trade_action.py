@@ -10,12 +10,12 @@ INIT_TEST_DATA = {
 
 
 class TradeActionTestCase(unittest.TestCase):
-    def dtest_init(self):
+    def test_init(self):
         trade_action = TradeAction(**INIT_TEST_DATA)
         self.assertEqual(trade_action.profit, 0.005)  # add assertion here
         self.assertEqual(trade_action.is_open, True)
 
-    def dtest_close(self):
+    def test_close(self):
         trade_action = TradeAction(**INIT_TEST_DATA)
         ts = 660
         highest_bid = 102

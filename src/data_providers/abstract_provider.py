@@ -49,7 +49,7 @@ class AbstractDataProvider:
     """Базовый класс, который объявляет интерфейс DataProvider.
     Не содержит реализаци подключения к данным, но предоставляет базовые методы для пред и пост обработки данных.
     """
-    def get_by_time(self, start, end, period, pair) -> pd.DataFrame:
+    def get_by_time(self, start, end, period, pair, fill_gaps=True) -> pd.DataFrame:
         """
         Метод возвращает данные по котировкам. В параметрах задается начало и окончание периода.
 
@@ -63,7 +63,7 @@ class AbstractDataProvider:
         start_ts = self.date_to_unix_ts_in_utc(start)
         num_of_period = (ts - start_ts) // period
 
-        result = self.get(ts, period, num_of_period, pair)
+        result = self.get(ts, period, num_of_period, pair, fill_gaps=fill_gaps)
         return result
 
     def get(self, ts, period, num_of_period, pair) -> pd.DataFrame:

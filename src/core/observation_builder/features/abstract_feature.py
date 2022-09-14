@@ -1,5 +1,9 @@
 import numpy as np
 from collections import deque
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractFeature:
@@ -8,7 +12,23 @@ class AbstractFeature:
     def __init__(self, context):
         self.context = context
 
-    def get(self):
+    def get_cleared(self, norm=False, clip_edge=4):
+        data = self.get()
+
+        # Нормализация
+        if norm:
+            data = data / np.abs(data).mean()
+
+        # Проверка масштаба
+        if clip_edge > 0:
+            check_data = np.abs(data) > clip_edge
+            if check_data.sum() > 0:
+                logger.warning("Дофига большие данные! {}".format(data))
+                data = np.clip(data, -clip_edge, clip_edge)
+
+        return data
+
+    def get(self, norm=False):
         """Метод возвращает текущее значение признака для данного datapoint"""
         pass
 
@@ -25,7 +45,7 @@ class AbstractFeatureWithHistory(AbstractFeature):
         self.data = None
         self.last_update = None
 
-    def get(self):
+    def get(self, norm=False):
         """Определяет логику формирования данных"""
         dp = self.context.data_point
 
@@ -49,7 +69,9 @@ class AbstractFeatureWithHistory(AbstractFeature):
             self.data.append(point)
             self.last_update = dp.get_current_ts()
 
-        return np.array(self.data)
+        data = np.array(self.data)
+
+        return data
 
     def reset(self):
         self.data = None

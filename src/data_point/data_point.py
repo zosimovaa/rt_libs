@@ -31,11 +31,15 @@ class DataPoint:
         self.hist_len = n_history_points
         self.obs_len = len(data) - n_future_points - n_history_points
 
+        # Верхушка observation = текущая точка данных
         self.up_idx = self.data.index[-(n_future_points + 1)]
+
+        # Начало observation
         self.low_idx = self.data.index[n_history_points]
 
         self.period = self.data.index[1] - self.data.index[0]
 
+    # Работа с индексом = = = = = = = = = = = = = = = = = = = =
     @with_exception(DataPointError)
     def get_current_ts(self):
         return self.up_idx
@@ -47,6 +51,7 @@ class DataPoint:
         else:
             return self.data.index[self.hist_len:].values
 
+    # Получение точек данных = = = = = = = = = = = = = = = = = = = =
     @with_exception(DataPointError)
     def get_value(self, name, cursor=None):
         if cursor is None:
@@ -59,6 +64,30 @@ class DataPoint:
         data = self.data.loc[self.low_idx : self.up_idx, name]
         return data
 
+    # todo перевести все реализации на такой метод
+    @with_exception(DataPointError)
+    def get_values2(self, name=None, cursor=None, num=1):
+        """
+        :param name: Название колонки. Если отсутствует - будет возвращен весь массив
+        :param cursor: Индекс запрашиваемого элемента. При отсутствии будет возвращен актуальный.
+        :param num: Количество элементов от запрашиваемого положительынй индекс - уход в историю,
+        отрицательный - в будущие точки; 0, -1 и 1 - вернет текущий.
+        :return: pandas DataFrame
+        """
+        if cursor is None:
+            cursor = self.up_idx
+
+        if name is None:
+            name = self.data.columns
+
+        if num < 0:
+            return self.data.loc[cursor:, name].iloc[:-num]
+        elif num == 0:
+            return self.data.loc[cursor]
+        else:
+            return self.data.loc[:cursor, name].iloc[-num:]
+
+    # todo вынести эту логику в ticker, чтобы datapoint был только с получением данных
     @with_exception(DataPointError)
     def get_last_diffs(self, num, column='lowest_ask'):
         row_idx_start = self.get_timestamps()[-num-1]
@@ -94,7 +123,6 @@ class DataPoint:
         else:
             data = None
         return data
-
 
     @with_exception(DataPointError)
     def get_hist_values(self, name, cursor=None):

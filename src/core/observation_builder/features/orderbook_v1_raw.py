@@ -1,4 +1,4 @@
-from .i_abstract_feature import AbstractFeatureWithHistory
+from .abstract_feature import AbstractFeatureWithHistory
 import logging
 import numpy as np
 import json
@@ -33,9 +33,11 @@ class OrderbookAsksFeature(AbstractFeatureWithHistory):
         asks_vol_prev = self._get_volumes(orderbook_prev, lowest_ask)
         asks_vol = self._get_volumes(orderbook, lowest_ask)
 
-        asks_rel = (asks_vol / asks_vol_prev - 1)
+        asks_rel = np.array((asks_vol / asks_vol_prev) - 1)
 
-        return asks_rel
+        clipped = np.clip(asks_rel, -5, 5)
+
+        return clipped
 
     def _get_volumes(self, asks, lowest_ask):
         if len(asks):
@@ -78,9 +80,11 @@ class OrderbookBidsFeature(AbstractFeatureWithHistory):
         bids_vol_prev = self._get_volumes(orderbook_prev, highest_bid)
         bids_vol = self._get_volumes(orderbook, highest_bid)
 
-        bids_rel = (bids_vol / bids_vol_prev - 1)
+        bids_rel = (bids_vol / bids_vol_prev) - 1
 
-        return bids_rel
+        clipped = np.clip(bids_rel, -5, 5)
+
+        return clipped
 
     def _get_volumes(self, bids, highest_bid):
         if len(bids):

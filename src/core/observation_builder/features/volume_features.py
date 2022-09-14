@@ -1,4 +1,4 @@
-from .i_abstract_feature import AbstractFeature
+from .abstract_feature import AbstractFeature
 import logging
 import numpy as np
 
