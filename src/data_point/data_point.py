@@ -24,6 +24,46 @@ class DataPointError(Exception):
 
 
 class DataPoint:
+    def __init__(self, data, n_observation_points=10, n_future_points=0):
+        self.data = data
+
+        self.fut_len = n_future_points
+        self.obs_len = n_observation_points
+        self.hist_len = len(self.data) - n_future_points - n_observation_points
+
+        # Верхушка observation = текущая точка данных
+        self.current_idx = self.data.index[-(self.fut_len + 1)]
+
+        # Начало observation
+        self.start_idx = self.data.index[self.hist_len]
+
+        self.period = self.data.index[1] - self.data.index[0]
+
+    def get_values(self, cursor=None, num=None, name=None, step_factor=1):
+        if name is None:
+            name = self.data.columns
+        idxs = self.get_indexes(cursor=cursor, num=num, step_factor=step_factor)
+        return self.data.loc[idxs, name]
+
+    def get_indexes(self, cursor=None, num=None, step_factor=1):
+        if cursor is None:
+            cursor = self.current_idx
+
+        if num is None:
+            num = self.obs_len
+
+        period = self.period * step_factor
+
+        if num > 0:
+            stop = cursor - (period * (num - 1))
+            idxs = np.arange(stop, cursor + period, period)
+        else:
+            stop = cursor - (period * (num - 1))
+            idxs = np.arange(cursor + period, stop, period)
+        return idxs
+
+
+class DataPoint_old:
     def __init__(self, data, n_history_points=10, n_future_points=0):
         self.data = data
 
@@ -142,143 +182,6 @@ class DataPoint:
         """Возвращает все фичи для текущей точки, коотрые считаются 'будущими' """
         if self.hist_len:
             cursor = self.low_idx if cursor is None else cursor
-
-            start_idx = max(cursor - self.period * self.hist_len, min(self.data.index))
-            end_idx = cursor - self.period
-
-            data = self.data.loc[start_idx: end_idx, :]
-        else:
-            data = None
-        return data
-
-
-class DataPoint2:
-    def __init__(self, data, n_observation_points=10, n_future_points=0):
-        self.data = data
-
-        self.fut_len = n_future_points
-        self.obs_len = n_observation_points
-        self.hist_len = len(data) - n_future_points - n_observation_points
-
-        # Верхушка observation = текущая точка данных
-        self.current_idx = self.data.index[-(self.fut_len + 1)]
-
-        # Начало observation
-        self.start_idx = self.data.index[self.hist_len]
-
-        self.period = self.data.index[1] - self.data.index[0]
-
-    # Работа с индексом = = = = = = = = = = = = = = = = = = = =
-    @with_exception(DataPointError)
-    def get_current_ts(self):
-        return self.current_idx
-
-    @with_exception(DataPointError)
-    def get_timestamps(self):
-        if self.fut_len:
-            return self.data.index[self.hist_len: -self.fut_len].values
-        else:
-            return self.data.index[self.hist_len:].values
-
-    def get_ts(self, cursor=None, step_factor=None, num=None):
-        if cursor is None:
-            cursor = self.current_idx
-
-
-
-    # todo перевести все реализации на такой метод
-    @with_exception(DataPointError)
-    def get_values(self, name=None, cursor=None, step_factor=1, num=1):
-        """
-        :param name: Название колонки. Если отсутствует - будет возвращен весь массив
-        :param cursor: Индекс запрашиваемого элемента. При отсутствии будет возвращен актуальный.
-        :param num: Количество элементов от запрашиваемого положительынй индекс - уход в историю,
-        отрицательный - в будущие точки; 0, -1 и 1 - вернет текущий.
-        :return: pandas DataFrame
-        """
-        if cursor is None:
-            cursor = self.current_idx
-
-        if name is None:
-            name = self.data.columns
-
-        if num < 0:
-            return self.data.loc[cursor:, name].iloc[:-num]
-        elif num == 0:
-            return self.data.loc[cursor]
-        else:
-            return self.data.loc[:cursor, name].iloc[-num:]
-
-    # Получение точек данных = = = = = = = = = = = = = = = = = = = =
-    @with_exception(DataPointError)
-    def get_value1(self, name, cursor=None):
-        if cursor is None:
-            cursor = self.current_idx
-        val = self.data.loc[cursor, name]
-        return val
-
-    @with_exception(DataPointError)
-    def get_values1(self, name):
-        data = self.data.loc[self.start_idx: self.current_idx, name]
-        return data
-
-
-
-    # todo вынести эту логику в ticker, чтобы datapoint был только с получением данных
-    @with_exception(DataPointError)
-    def get_last_diffs(self, num, column='lowest_ask'):
-        row_idx_start = self.get_timestamps()[-num-1]
-        row_idx_end = self.current_idx
-
-        data = self.data.loc[row_idx_start : row_idx_end, column]
-        diffs = data.diff()
-        return diffs.values[1:]
-
-    @with_exception(DataPointError)
-    def get_current_data(self):
-        return self.data.loc[self.start_idx: self.current_idx + 1]
-
-    @with_exception(DataPointError)
-    def get_future_values(self, name, cursor=None):
-        if self.fut_len:
-            cursor = self.current_idx if cursor is None else cursor
-            start_idx = cursor + self.period
-            end_idx = self.fut_len * self.period + cursor
-            data = self.data.loc[start_idx: end_idx, name]
-        else:
-            data = None
-        return data
-
-    @with_exception(DataPointError)
-    def get_future_data(self, cursor=None):
-        """Возвращает все фичи для текущей точки, коотрые считаются 'будущими' """
-        if self.fut_len:
-            cursor = self.current_idx if cursor is None else cursor
-            start_idx = cursor + self.period
-            end_idx = self.fut_len * self.period + cursor
-            data = self.data.loc[start_idx: end_idx, :]
-        else:
-            data = None
-        return data
-
-    @with_exception(DataPointError)
-    def get_hist_values(self, name, cursor=None):
-        if self.hist_len:
-            cursor = self.start_idx if cursor is None else cursor
-
-            start_idx = max(cursor - self.period * self.hist_len, min(self.data.index))
-            end_idx = cursor - self.period
-
-            data = self.data.loc[start_idx: end_idx, name]
-        else:
-            data = None
-        return data
-
-    @with_exception(DataPointError)
-    def get_hist_data(self, cursor=None):
-        """Возвращает все фичи для текущей точки, коотрые считаются 'будущими' """
-        if self.hist_len:
-            cursor = self.start_idx if cursor is None else cursor
 
             start_idx = max(cursor - self.period * self.hist_len, min(self.data.index))
             end_idx = cursor - self.period

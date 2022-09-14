@@ -11,7 +11,7 @@ class DataPointFactoryError(Exception):
 
 
 class DataPointFactory:
-    def __init__(self, dataset, period=300, n_observation_points=5, n_history_points=10, n_future_points=0, step_size=None):
+    def __init__(self, dataset, period=300, n_observation_points=10, n_history_points=0, n_future_points=0, step_size=None):
         self.period = period
         self.n_observation_points = n_observation_points
         self.n_history_points = n_history_points
@@ -56,7 +56,7 @@ class DataPointFactory:
         idxs = self.get_idx()
         data = self.dataset.loc[idxs, :]
 
-        data_point = DataPoint(data, n_history_points=self.n_history_points, n_future_points=self.n_future_points)
+        data_point = DataPoint(data, n_observation_points=self.n_observation_points, n_future_points=self.n_future_points)
         return data_point
 
     @with_exception(DataPointFactoryError)
