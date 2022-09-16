@@ -1,6 +1,6 @@
-from .core_facade import RTCore
+'''from .core_facade import RTCore
 
-from ..observation_builder import ObservationBuilderV2TradeBalance
+from ..observation_builder import ObservationBuilderTradeBalance
 from ..observation_builder import ObservationBuilderV2Orderbook, ObservationBuilderV2OrderbookV2
 from ..observation_builder import ObservationBuilderV2ObTb
 from ..observation_builder import ObservationBuilderV2OrderbookDiffFeature
@@ -10,7 +10,7 @@ class CoreV2TradeBalance(RTCore):
     """Реализация тренера с базовым набором фичей, с предсказанием."""
     def __init__(self, *args, **kwargs):
         RTCore.__init__(self, *args, **kwargs)
-        self.observation = ObservationBuilderV2TradeBalance(self.context)
+        self.observation = ObservationBuilderTradeBalance(self.context)
 
 
 class CoreV2Orderbook(RTCore):
@@ -38,3 +38,4 @@ class CoreV2ObDiffFeat(RTCore):
     def __init__(self, *args, **kwargs):
         RTCore.__init__(self, *args, **kwargs)
         self.observation = ObservationBuilderV2OrderbookDiffFeature(self.context)
+'''

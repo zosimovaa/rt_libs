@@ -56,7 +56,12 @@ class DataPointFactory:
         idxs = self.get_idx()
         data = self.dataset.loc[idxs, :]
 
-        data_point = DataPoint(data, n_observation_points=self.n_observation_points, n_future_points=self.n_future_points)
+        data_point = DataPoint(
+            data,
+            n_observation_points=self.n_observation_points,
+            n_future_points=self.n_future_points,
+            period=self.period
+        )
         return data_point
 
     @with_exception(DataPointFactoryError)

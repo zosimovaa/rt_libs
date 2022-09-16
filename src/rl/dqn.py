@@ -212,19 +212,23 @@ class DQN:
 
             # Update running reward to check condition for solving
             self.episode_reward_history.append(episode_reward)
-            if len(self.episode_reward_history) > 30:
+            if len(self.episode_reward_history) > 20:
                 del self.episode_reward_history[:1]
             self.running_reward = np.mean(self.episode_reward_history)
 
-            self.episode_count += 1
-
+            finish = False
             if goal_reward is not None and self.running_reward >= goal_reward:  # Condition to consider the task solved
                 logger.critical("Solved at episode {}!".format(self.episode_count))
-                break
+                finish = True
 
             if max_frames is not None and self.frame_count >= max_frames:
                 logger.critical("Frame {} was reached!".format(self.frame_count))
+                finish = True
+
+            if finish:
                 break
+
+            self.episode_count += 1
 
     def log(self, tm_start):
         tm_end = time.time()

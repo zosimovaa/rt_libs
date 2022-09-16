@@ -5,7 +5,7 @@ from collections import deque
 
 from tests.test_suite_env import SimpleTestSuiteEnv
 from core.context import BasicContext
-from core.observation_builder.features.trend_indicator_features import TrendIndicatorFeature
+from core.observation_builder.features.trend_indicator import TrendIndicatorFeature
 
 
 def make_dataset():

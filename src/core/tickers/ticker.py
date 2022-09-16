@@ -112,7 +112,7 @@ class TickerExtendedReward(TickerBasic):
             reward = self._get_penalty()
             action_result = BadAction(self.context)
         else:
-            last_data_points_diff = self.context.data_point.get_last_diffs(self.NUM_MEAN_OBS)
+            last_data_points_diff = self.get_last_diffs()
             rates_diff_mean = np.mean(last_data_points_diff)
             reward = -rates_diff_mean / self.context.get("highest_bid") * self.REWARD_SCALE_WAIT
 
@@ -122,7 +122,7 @@ class TickerExtendedReward(TickerBasic):
 
     def _action_hold(self, ts, is_open):
         if is_open:
-            last_data_points_diff = self.context.data_point.get_last_diffs(self.NUM_MEAN_OBS)
+            last_data_points_diff = self.get_last_diffs()
             rates_diff_mean = np.mean(last_data_points_diff)
             reward = rates_diff_mean / self.context.get("highest_bid") * self.REWARD_SCALE_WAIT
             action_result = None
@@ -130,3 +130,11 @@ class TickerExtendedReward(TickerBasic):
             reward = self._get_penalty()
             action_result = BadAction(self.context)
         return reward, action_result
+
+    def get_last_diffs(self, column='lowest_ask'):
+        data_point = self.context.data_point
+        num = self.NUM_MEAN_OBS + 1
+        feature = data_point.get_values(name=column, num=num, as_ndarray=False)
+        return feature.diff().dropna().values
+
+

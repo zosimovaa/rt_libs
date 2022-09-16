@@ -59,7 +59,7 @@ class BasicContext:
         self.set("data_point", self.data_point.data, domain="Data")
 
         # update price params in context
-        self.set("ts", data_point.get_current_ts())
+        self.set("ts", data_point.get_current_index())
         self.set("lowest_ask", data_point.get_value("lowest_ask"))
         self.set("highest_bid", data_point.get_value("highest_bid"))
 

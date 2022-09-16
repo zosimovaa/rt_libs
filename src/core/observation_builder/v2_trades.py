@@ -17,22 +17,21 @@ import numpy as np
 
 from .interface import ObservationBuilderInterface
 from .features import TradeStateFeature
-from .features import Rates1DFeature
+from .features import OrderbookDiffFeature2D
 from .features import ProfitFeature
 from .features import TradeBalanceFeature
-from .features import OrderbookAsksFeature
-from .features import OrderbookBidsFeature
-from .features import OrderbookDiffFeature
+from .features import Rates2DFactorFeature
+
 
 logger = logging.getLogger(__name__)
 
 
-class ObservationBuilderV2TradeBalance(ObservationBuilderInterface):
-    def __init__(self, context):
+class ObservationBuilderTradeBalance(ObservationBuilderInterface):
+    def __init__(self, context, step_factor=(1, 3, 12)):
         """Конструктор класса"""
         self.context = context
         self.trade_state_feat = TradeStateFeature(context)
-        self.rate_feat = Rates1DFeature(context)
+        self.rate_feat = Rates2DFactorFeature(context, step_factor=step_factor)
         self.profit_feat = ProfitFeature(context)
         self.balance_feat = TradeBalanceFeature(context)
 
@@ -45,7 +44,7 @@ class ObservationBuilderV2TradeBalance(ObservationBuilderInterface):
 
     def get(self, data_point):
         trade_state = self.trade_state_feat.get()
-        rates = self.rate_feat.get()
+        rates2d = self.rate_feat.get()
         profit = self.profit_feat.get()
         trade_balance = self.balance_feat.get()
 
@@ -54,9 +53,9 @@ class ObservationBuilderV2TradeBalance(ObservationBuilderInterface):
         static_data = [trade_state]
 
         conv_data = np.concatenate([
-            rates.reshape(-1, 1),
+            rates2d,
             profit.reshape(-1, 1),
-            trade_balance.reshape(-1, 1),
+            trade_balance.reshape(-1, 1)
         ], axis=1)
 
         observation = [
@@ -66,186 +65,40 @@ class ObservationBuilderV2TradeBalance(ObservationBuilderInterface):
         return observation
 
 
-class ObservationBuilderV2Orderbook(ObservationBuilderInterface):
-    def __init__(self, context):
+class ObservationBuilderOrderbook(ObservationBuilderInterface):
+    def __init__(self, context, step_factor=(1, 3, 12), levels=None):
         """Конструктор класса"""
         self.context = context
         self.trade_state_feat = TradeStateFeature(context)
-        self.rate_feat = Rates1DFeature(context)
+        self.rate_feat = Rates2DFactorFeature(context, step_factor=step_factor)
         self.profit_feat = ProfitFeature(context)
-        self.asks_feat = OrderbookAsksFeature(context)
-        self.bids_feat = OrderbookBidsFeature(context)
+        self.orderbook_feat = OrderbookDiffFeature2D(context, levels=levels)
 
     def reset(self):
         """Сброс параметров"""
         self.trade_state_feat.reset()
         self.rate_feat.reset()
         self.profit_feat.reset()
-        self.asks_feat.reset()
-        self.bids_feat.reset()
+        self.orderbook_feat.reset()
 
     def get(self, data_point):
         trade_state = self.trade_state_feat.get()
-        rates = self.rate_feat.get()
+        rates2d = self.rate_feat.get()
         profit = self.profit_feat.get()
-        asks = self.asks_feat.get()
-        bids = self.bids_feat.get()
+        orderbook2d = self.orderbook_feat.get()
 
         # ------------------------------------------
         # observation
         static_data = [trade_state]
 
         conv_data = np.concatenate([
-            rates.reshape(-1, 1),
+            rates2d,
             profit.reshape(-1, 1),
-            asks[:, 1].reshape(-1, 1),
-            bids[:, 1].reshape(-1, 1),
+            orderbook2d,
         ], axis=1)
 
         observation = [
             np.array(static_data, dtype=np.float32),
             np.array(conv_data, dtype=np.float32)
         ]
-        return observation
-
-
-class ObservationBuilderV2OrderbookV2(ObservationBuilderInterface):
-    def __init__(self, context):
-        """Конструктор класса"""
-        self.context = context
-        self.trade_state_feat = TradeStateFeature(context)
-        self.rate_feat = Rates1DFeature(context)
-        self.profit_feat = ProfitFeature(context)
-        self.asks_feat = OrderbookAsksFeature(context)
-        self.bids_feat = OrderbookBidsFeature(context)
-
-    def reset(self):
-        """Сброс параметров"""
-        self.trade_state_feat.reset()
-        self.rate_feat.reset()
-        self.profit_feat.reset()
-        self.asks_feat.reset()
-        self.bids_feat.reset()
-
-    def get(self, data_point):
-        trade_state = self.trade_state_feat.get()
-        rates = self.rate_feat.get()
-        profit = self.profit_feat.get()
-        asks = self.asks_feat.get()
-        bids = self.bids_feat.get()
-
-        # ------------------------------------------
-        # observation
-        static_data = [trade_state]
-
-        conv_data_basic = np.concatenate([
-            rates.reshape(-1, 1),
-            profit.reshape(-1, 1),
-        ], axis=1)
-
-        conv_data_asks = np.concatenate([
-            asks
-        ], axis=1)
-
-        conv_data_bids = np.concatenate([
-            bids
-        ], axis=1)
-
-        observation = [
-            np.array(static_data, dtype=np.float32),
-            np.array(conv_data_basic, dtype=np.float32),
-            np.array(conv_data_asks, dtype=np.float32),
-            np.array(conv_data_bids, dtype=np.float32)
-        ]
-        return observation
-
-
-class ObservationBuilderV2ObTb(ObservationBuilderInterface):
-    def __init__(self, context):
-        """Конструктор класса"""
-        self.context = context
-        self.trade_state_feat = TradeStateFeature(context)
-        self.rate_feat = Rates1DFeature(context)
-        self.profit_feat = ProfitFeature(context)
-        self.balance_feat = TradeBalanceFeature(context)
-        self.asks_feat = OrderbookAsksFeature(context)
-        self.bids_feat = OrderbookAsksFeature(context)
-
-    def reset(self):
-        """Сброс параметров"""
-        self.trade_state_feat.reset()
-        self.rate_feat.reset()
-        self.profit_feat.reset()
-        self.balance_feat.reset()
-        self.asks_feat.reset()
-        self.bids_feat.reset()
-
-    def get(self, data_point):
-        trade_state = self.trade_state_feat.get()
-        rates = self.rate_feat.get()
-        profit = self.profit_feat.get()
-        trade_balance = self.balance_feat.get()
-        asks = self.asks_feat.get()
-        bids = self.bids_feat.get()
-
-        # ------------------------------------------
-        # observation
-        static_data = [trade_state]
-
-        conv_data = np.concatenate([
-            rates.reshape(-1, 1),
-            profit.reshape(-1, 1),
-            trade_balance.reshape(-1, 1),
-            asks[:, 1].reshape(-1, 1),
-            bids[:, 1].reshape(-1, 1),
-        ], axis=1)
-
-        observation = [
-            np.array(static_data, dtype=np.float32),
-            np.array(conv_data, dtype=np.float32)
-        ]
-        return observation
-
-
-class ObservationBuilderV2OrderbookDiffFeature(ObservationBuilderInterface):
-    def __init__(self, context):
-        """Конструктор класса"""
-        self.context = context
-        self.trade_state_feat = TradeStateFeature(context)
-        self.rate_feat = Rates1DFeature(context)
-        self.profit_feat = ProfitFeature(context)
-        self.diff_feat = OrderbookDiffFeature(context)
-
-    def reset(self):
-        """Сброс параметров"""
-        self.trade_state_feat.reset()
-        self.rate_feat.reset()
-        self.profit_feat.reset()
-        self.diff_feat.reset()
-
-    def get(self, data_point):
-        trade_state = self.trade_state_feat.get()
-        rates = self.rate_feat.get()
-        profit = self.profit_feat.get()
-        orderbook_diff = self.diff_feat.get_cleared(norm=False, clip_edge=4)
-
-        # ------------------------------------------
-        # observation
-        static_data = [trade_state]
-
-        conv_data_basic = np.concatenate([
-            rates.reshape(-1, 1),
-            profit.reshape(-1, 1),
-        ], axis=1)
-
-        conv_data_orderbook = np.concatenate([
-            orderbook_diff.reshape(-1, 1)
-        ], axis=1)
-
-        observation = [
-            np.array(static_data, dtype=np.float32),
-            np.array(conv_data_basic, dtype=np.float32),
-            np.array(conv_data_orderbook, dtype=np.float32)
-        ]
-
         return observation

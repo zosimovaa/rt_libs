@@ -5,7 +5,7 @@ from collections import deque
 
 from tests.test_suite_env import SimpleTestSuiteEnv
 from core.context import BasicContext
-from core.observation_builder.features.basic_features import TradeStateFeature, Rates1DFeature, ProfitFeature
+from core.observation_builder.features.basic import TradeStateFeature, Rates1DFeature, ProfitFeature
 
 
 def make_dataset():

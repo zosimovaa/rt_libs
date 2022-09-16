@@ -19,7 +19,7 @@ class AbstractContextSequencePrediction(BasicContext):
         self.set("data_point", self.data_point.data, domain="Data")
 
         # update price params in context
-        self.set("ts", data_point.get_current_ts())
+        self.set("ts", data_point.get_current_index())
         self.set("lowest_ask", self.LOWEST_ASK)
         self.set("highest_bid", data_point.get_value("feature"))
 
@@ -38,7 +38,7 @@ class AbstractContextCloseSignal(BasicContext):
         self.set("data_point", self.data_point.data, domain="Data")
 
         # update price params in context
-        self.set("ts", data_point.get_current_ts())
+        self.set("ts", data_point.get_current_index())
         self.set("lowest_ask", data_point.get_value("close_signal"))
         self.set("highest_bid", data_point.get_value("close_signal"))
 
@@ -55,7 +55,7 @@ class AbstractContextOpenSignal(BasicContext):
         self.set("data_point", self.data_point.data, domain="Data")
 
         # update price params in context
-        self.set("ts", data_point.get_current_ts())
+        self.set("ts", data_point.get_current_index())
         self.set("lowest_ask", data_point.get_value("open_signal"))
         self.set("highest_bid", data_point.get_value("open_signal"))
 
@@ -72,7 +72,7 @@ class AbstractContextCompleteTrade(BasicContext):
         self.set("data_point", self.data_point.data, domain="Data")
 
         # update price params in context
-        self.set("ts", data_point.get_current_ts())
+        self.set("ts", data_point.get_current_index())
         self.set("lowest_ask", data_point.get_value("open_signal"))
         self.set("highest_bid", data_point.get_value("close_signal"))
 

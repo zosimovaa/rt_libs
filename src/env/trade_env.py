@@ -94,7 +94,7 @@ class TradeEnv(gym.Env):
             "price": self.core.context.get("highest_bid"),
             "observation": obs_to_string(self.core.context.get("observation", domain="Data")),
             "action": self.core.context.get("action", domain="Action"),
-            "reward": self.core.context.get("reward",  domain="Action"),
+            "reward": self.core.context.get("reward", domain="Action"),
             "total_reward": self.core.metric_collector.get_metric("TotalReward"),
             "balance": self.core.metric_collector.get_metric("Balance"),
             "profit": self.core.context.get("profit", domain="Trade"),

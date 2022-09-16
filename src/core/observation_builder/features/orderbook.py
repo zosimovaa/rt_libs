@@ -1,0 +1,33 @@
+"""
+Фичи c orderbook
+
+"""
+import logging
+import numpy as np
+
+from .abstract_class import AbstractFeature
+
+logger = logging.getLogger(__name__)
+
+
+class OrderbookDiffFeature2D(AbstractFeature):
+    def __init__(self, context, levels=(0.001, 0.0025, 0.005, 0.0075)):
+        super().__init__(context)
+        self.levels = levels
+
+    def _get(self):
+        data_point = self.context.data_point
+        obs_len = data_point.obs_len
+
+        result = []
+
+        for level in self.levels:
+            asks = data_point.get_values(name="asks_" + str(level), num=obs_len)
+            bids = data_point.get_values(name="bids_" + str(level), num=obs_len)
+
+            feature = bids - asks
+            feature = feature / np.abs(feature).mean()
+
+            result.append(feature.reshape(-1, 1))
+        obs = np.concatenate(result, axis=1)
+        return obs

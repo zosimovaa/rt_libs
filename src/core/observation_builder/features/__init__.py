@@ -1,14 +1,13 @@
-from .abstract_feature import AbstractFeature, AbstractFeatureWithHistory
+from .abstract_class import AbstractFeature
+from .abstract_class import AbstractFeatureWithHistory
 
-from .basic_features import TradeStateFeature
-from .basic_features import Rates1DFeature
-from .basic_features import ProfitFeature
+from .basic import TradeStateFeature
+from .basic import Rates1DFeature
+from .basic import Rates2DFactorFeature
+from .basic import ProfitFeature
 
-from .trend_indicator_features import TrendIndicatorFeature
+from .trend_indicator import TrendIndicatorFeature
 
-from .volume_features import TradeBalanceFeature
+from .volume import TradeBalanceFeature
 
-from .orderbook_v1_raw import OrderbookAsksFeature
-from .orderbook_v1_raw import OrderbookBidsFeature
-
-from .orderbook_v2_diff import OrderbookDiffFeature
+from .orderbook import OrderbookDiffFeature2D

@@ -24,7 +24,7 @@ class DataPointError(Exception):
 
 
 class DataPoint:
-    def __init__(self, data, n_observation_points=10, n_future_points=0):
+    def __init__(self, data, n_observation_points=10, n_future_points=0, period=1):
         self.data = data
 
         self.fut_len = n_future_points
@@ -37,13 +37,26 @@ class DataPoint:
         # Начало observation
         self.start_idx = self.data.index[self.hist_len]
 
-        self.period = self.data.index[1] - self.data.index[0]
+        self.period = period  # self.data.index[1] - self.data.index[0]
 
-    def get_values(self, cursor=None, num=None, name=None, step_factor=1):
+    def get_values(self, cursor=None, num=None, name=None, step_factor=1, as_ndarray=True):
         if name is None:
             name = self.data.columns
         idxs = self.get_indexes(cursor=cursor, num=num, step_factor=step_factor)
-        return self.data.loc[idxs, name]
+
+        if as_ndarray:
+            result = self.data.loc[idxs, name].values
+        else:
+            result = self.data.loc[idxs, name]
+
+        return result
+
+    def get_value(self, name, cursor=None):
+        value = self.get_values(name=name, num=1, cursor=cursor, as_ndarray=True)
+        return value[0]
+
+    def get_current_index(self):
+        return self.current_idx
 
     def get_indexes(self, cursor=None, num=None, step_factor=1):
         if cursor is None:
@@ -60,6 +73,7 @@ class DataPoint:
         else:
             stop = cursor - (period * (num - 1))
             idxs = np.arange(cursor + period, stop, period)
+
         return idxs
 
 

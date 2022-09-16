@@ -1,7 +1,9 @@
-from .abstract_feature import AbstractFeature
+"""
+Модуль с фичами по объемам
+"""
 import logging
-import numpy as np
 
+from .abstract_class import AbstractFeature
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +14,9 @@ class TradeBalanceFeature(AbstractFeature):
     def __init__(self, context):
         super().__init__(context)
 
-    def get(self):
+    def _get(self):
         dp = self.context.data_point
-        buy_vol = dp.get_values("buy_vol").values
-        sell_vol = dp.get_values("sell_vol").values
+        buy_vol = dp.get_values(name="buy_vol")
+        sell_vol = dp.get_values(name="sell_vol")
         trade_balance = (buy_vol - sell_vol) / (buy_vol + sell_vol + self.DELTA)
         return trade_balance

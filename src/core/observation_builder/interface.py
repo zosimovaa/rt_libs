@@ -8,7 +8,7 @@ class ObservationBuilderInterface(ABC):
     @abstractmethod
     def get(self, datapoint):
         """
-        Метод формирует сэмл наблдения
+        Метод формирует сэмл наблюдения
         :param datapoint: DataPoint object
         :return: observation sample, np.array или list of np.array
         """
