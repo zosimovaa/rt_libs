@@ -6,7 +6,7 @@ from core.actions import BadAction, TradeAction
 
 class Player:
 
-    def __init__(self, env_core, model, dataset_handler, render=True):
+    def __init__(self, env_core, model, dataset_handler):
         self.core = env_core
         self.model = model
         self.dataset_handler = dataset_handler
@@ -18,14 +18,13 @@ class Player:
         self.ax = None
 
         self.test = []
-        self.render = render
 
         self.fig_size_x = None
         self.fig_size_y = None
         self.dpi = None
         self.font_size = None
 
-    def play(self, fig_size_x=13, fig_size_y=5, dpi=50, font_size=20):
+    def play(self, fig_size_x=13, fig_size_y=5, dpi=50, font_size=20, render=True):
         self.fig_size_x = fig_size_x
         self.fig_size_y = fig_size_y
         self.dpi = dpi
@@ -55,7 +54,7 @@ class Player:
             data_point, done = self.dataset_handler.get_next_step()
             observation = self.core.get_observation(data_point)
 
-        if self.render:
+        if render:
             self.render_plot()
 
         metrics = self.core.get_metrics()

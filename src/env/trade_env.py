@@ -27,7 +27,9 @@ class TradeEnv(gym.Env):
         self.logger = logger_setup(self.logger, self.alias)
 
         metrics = self.core.get_metrics()
+        # todo это можно выпилить, я больше не смотрю метрики из файла
         self.logger.warning(";".join(metrics.keys()))
+
         self.logger.info("Observation space {}".format(self.observation_space))
         self.step_num = 0
 

@@ -12,4 +12,6 @@ from .v1_with_trend_indicator import ObservationBuilderTrendIndicator
 from .v2_trades import ObservationBuilderTradeBalance
 from .v2_trades import ObservationBuilderOrderbook
 
+from .v3_orderbook_volumes import ObservationBuilderOrderbookTradeBalance
+
 
