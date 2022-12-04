@@ -8,9 +8,12 @@ logger = logging.getLogger(__name__)
 
 
 class TickerBasic:
-    """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции"""
-    REWARD_SCALE_OPEN = 10
-    REWARD_SCALE_CLOSE = 100
+    """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции
+    Награда из профита выдается только при открытии и закрытии. В ожидании будетнаграда только в виде
+    штрафа за неправильные действия.
+    """
+    REWARD_OPEN = 10
+    REWARD_CLOSE = 100
     NUM_MEAN_OBS = 2
 
     handler = {
@@ -65,7 +68,7 @@ class TickerBasic:
             action_result = self.trade
 
             profit = self.trade.get_profit()
-            reward = profit * self.REWARD_SCALE_OPEN
+            reward = profit * self.REWARD_OPEN
         return reward, action_result
 
     def _action_hold(self, ts, is_open):
@@ -80,7 +83,7 @@ class TickerBasic:
     def _action_close_trade(self, ts, is_open):
         if is_open:
             profit = self.context.get("profit", domain="Trade")
-            reward = profit * self.REWARD_SCALE_CLOSE
+            reward = profit * self.REWARD_CLOSE
             self.trade.close()
 
             action_result = self.trade
@@ -91,10 +94,13 @@ class TickerBasic:
 
 
 class TickerExtendedReward(TickerBasic):
-    """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции"""
-    REWARD_SCALE_WAIT = 100
-    REWARD_SCALE_OPEN = 10
-    REWARD_SCALE_CLOSE = 100
+    """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции"
+    Помимо награзы в виде профита за открытие/закрытие добавляется награда в ожидании в виде изменения курса.
+    """
+    REWARD_WAIT = 10
+    REWARD_OPEN = 10
+    REWARD_HOLD = 10
+    REWARD_CLOSE = 100
     NUM_MEAN_OBS = 2
 
     handler = {
@@ -114,7 +120,7 @@ class TickerExtendedReward(TickerBasic):
         else:
             last_data_points_diff = self.get_last_diffs()
             rates_diff_mean = np.mean(last_data_points_diff)
-            reward = -rates_diff_mean / self.context.get("highest_bid") * self.REWARD_SCALE_WAIT
+            reward = -rates_diff_mean / self.context.get("highest_bid") * self.REWARD_WAIT
 
             action_result = None
 
@@ -124,7 +130,7 @@ class TickerExtendedReward(TickerBasic):
         if is_open:
             last_data_points_diff = self.get_last_diffs()
             rates_diff_mean = np.mean(last_data_points_diff)
-            reward = rates_diff_mean / self.context.get("highest_bid") * self.REWARD_SCALE_WAIT
+            reward = rates_diff_mean / self.context.get("highest_bid") * self.REWARD_HOLD
             action_result = None
         else:
             reward = self._get_penalty()
@@ -138,3 +144,15 @@ class TickerExtendedReward(TickerBasic):
         return feature.diff().dropna().values
 
 
+class TickerExtendedReward2(TickerExtendedReward):
+    """На холде будет строить награду из профита"""
+
+    def _action_hold(self, ts, is_open):
+        if is_open:
+            profit = self.context.get("profit", domain="Trade")
+            reward = profit * self.REWARD_HOLD
+            action_result = None
+        else:
+            reward = self._get_penalty()
+            action_result = BadAction(self.context)
+        return reward, action_result

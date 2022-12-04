@@ -7,9 +7,8 @@ logger = logging.getLogger(__name__)
 
 
 class TradeAction(BaseAction):
-    """Класс описывает торговую операцию"""
+    """The class describes a trade operation"""
     def __init__(self, context):
-        """Инстанс класса создается при открытии торговой операции"""
         BaseAction.__init__(self)
         self.context = context
         self.open_ts = context.get("ts")
@@ -46,7 +45,7 @@ class TradeAction(BaseAction):
 
 
 class AbstractTradeAction(TradeAction):
-    """Класс описывает торговую операцию для первого этапа обучения на абстрактных данных"""
+    """The class describes a trading operation for the first stage of learning on abstract data"""
     def __init__(self, context):
         TradeAction.__init__(self, context)
 

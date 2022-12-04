@@ -6,3 +6,4 @@ from .abstract_ticker import AbstractTickerCompleteTrade
 
 from .ticker import TickerBasic
 from .ticker import TickerExtendedReward
+from .ticker import TickerExtendedReward2

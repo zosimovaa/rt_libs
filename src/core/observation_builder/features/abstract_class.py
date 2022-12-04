@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractFeature(metaclass=abc.ABCMeta):
-    """Для простых, не тяжелых в вычислении фичей"""
+    """For simple, not heavy to calculate features"""
 
     def __init__(self, context):
         self.context = context
@@ -16,20 +16,20 @@ class AbstractFeature(metaclass=abc.ABCMeta):
     def get(self, norm=False, clip_edge=4) -> np.ndarray:
         data = self._get()
 
-        # Нормирование данных
+        # data normalization
         if norm:
             data = data / np.abs(data).mean()
 
-        # Проверка масштаба
-        if clip_edge > 0:
+        # Check data scale
+        if clip_edge:
             check_data = np.abs(data) > clip_edge
-            if check_data.sum() > 0:
+            if check_data.sum():
                 self.scale_is_broken = True
                 data = np.clip(data, -clip_edge, clip_edge)
         return data
 
     def reset(self) -> None:
-        """Сброс в начальное состояние. Актуально для наследников AbstractFeatureWithHistory"""
+        """Reset to initial state. Relevant for the heirs of AbstractFeatureWithHistory"""
         if self.scale_is_broken:
             logger.warning("{0}: Scale is broken".format(self.__class__.__name__))
             self.scale_is_broken = False
@@ -37,13 +37,13 @@ class AbstractFeature(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def _get(self) -> np.ndarray:
-        """Метод возвращает текущее значение признака для данного datapoint"""
+        """The method returns the current feature value for the given datapoint"""
 
 
 class AbstractFeatureWithHistory(AbstractFeature):
     """
-    Для тяжелых в вычислении фичей. Для каждого шага вычисляется только актуальная точка данных. Предыдущие хранятся в кэше.
-    Но лучше использовать precompute-фичи для предварительного расчета в датасете, если это возможно.
+    For hard-to-calculate features. For each step, only the actual data point is calculated. The previous ones are stored in the cache.
+    But it is better to use precompute features for precomputation in the dataset, if possible.
     """
 
     def __init__(self, context):
@@ -54,28 +54,28 @@ class AbstractFeatureWithHistory(AbstractFeature):
 
     @abc.abstractmethod
     def _build_point(self, dp, cursor=None):
-        """Метод должен реализовывать вычисление точки данных для данного cursor. Если cursor не определн - то """
+        """The method must implement the calculation of the data point for the given cursor. If cursor is not defined, then """
         pass
 
     def _get(self):
-        """Определяет логику формирования данных"""
+        """Defines the data generation logic"""
         dp = self.context.data_point
 
-        # Запрос первого наблюдения
+        # First Observation Request
         if self.data is None:
             self.data = self._init_data(dp)
             self.last_update = dp.get_current_index()
 
-        # Были потери в данных
+        # There were data losses
         elif dp.get_current_index() > self.last_update + dp.period:
             self.data = self._init_data(dp)
             self.last_update = dp.get_current_index()
 
-        # Повторное построение observation
+        # Rebuild observation
         elif dp.get_current_index() == self.last_update:
             pass
 
-        # Запрос следующей точки
+        # Request next point
         else:
             point = self._build_point(dp)
             self.data.append(point)

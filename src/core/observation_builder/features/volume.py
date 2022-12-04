@@ -1,5 +1,5 @@
 """
-Модуль с фичами по объемам
+Trade volumes features
 """
 import logging
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class TradeBalanceFeature(AbstractFeature):
-    DELTA = 0.0000000000001 # Параметр, чтобы избежать деления на 0.
+    DELTA = 0.0000000000001  # Option to avoid division by 0.
 
     def __init__(self, context):
         super().__init__(context)

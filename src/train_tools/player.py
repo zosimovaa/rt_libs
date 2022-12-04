@@ -24,7 +24,7 @@ class Player:
         self.dpi = None
         self.font_size = None
 
-    def play(self, fig_size_x=13, fig_size_y=5, dpi=50, font_size=20, render=True):
+    def play(self, fig_size_x=13, fig_size_y=5, dpi=50, font_size=20, render=True, close_last=True):
         self.fig_size_x = fig_size_x
         self.fig_size_y = fig_size_y
         self.dpi = dpi
@@ -53,6 +53,11 @@ class Player:
 
             data_point, done = self.dataset_handler.get_next_step()
             observation = self.core.get_observation(data_point)
+
+        # Close last trade
+        if close_last and len(self.trade_actions_history):
+            if self.trade_actions_history[-1].is_open:
+                reward, action_result = self.core.apply_action(3)
 
         if render:
             self.render_plot()

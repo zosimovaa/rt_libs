@@ -1,5 +1,5 @@
 """
-Модуль с базовыми фичами - состояние сделки, курс, профит.
+Module with basic features - deal status, rate, profit.
 """
 
 import logging
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class TradeStateFeature(AbstractFeature):
-    """Достает из контекста текущее состояние торговой операции"""
+    """Retrieves the current state of a trade operation from the context"""
     def __init__(self, context):
         super().__init__(context)
 
@@ -23,7 +23,7 @@ class TradeStateFeature(AbstractFeature):
 
 
 class Rates1DFeature(AbstractFeature):
-    """Показывает курс, нормализованный к актуальному значению """
+    """Shows the exchange rate normalized to the current value """
     def __init__(self, context, scale_factor=10):
         super().__init__(context)
         self.scale_factor = scale_factor
@@ -37,7 +37,7 @@ class Rates1DFeature(AbstractFeature):
 
 
 class Rates2DFactorFeature(AbstractFeature):
-    """Возвращает матрицу с нормализованными значениями курсов за разные периоды"""
+    """Returns a matrix with normalized rates for different periods"""
     def __init__(self, context, step_factor=(1,), scale_factor=10):
         super().__init__(context)
         self.step_factor = step_factor
@@ -64,7 +64,7 @@ class Rates2DFactorFeature(AbstractFeature):
 
 
 class ProfitFeature(AbstractFeature):
-    """Расчет профита"""
+    """Profit calculation"""
     def __init__(self, context, scale_factor=10):
         super().__init__(context)
         self.scale_factor = scale_factor

@@ -1,5 +1,5 @@
 """
-Модуль с реализацией фичи trend indicator.
+Trend indicator features (experimental).
 """
 import logging
 import numpy as np

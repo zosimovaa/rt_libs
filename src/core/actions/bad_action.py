@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class BadAction(BaseAction):
-    """Класс описывает неверное действие нейросети в текущем контексте"""
+    """The class describes the wrong action of the neural network in the current context"""
     def __init__(self, context):
         BaseAction.__init__(self)
         self.ts = context.get("ts")

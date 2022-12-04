@@ -1,8 +1,8 @@
 """
-Торговая операция - передается при открытии и закрытии.
- - при обучении используется для сбора метрик
- - при тестировании использую в плеере. Такой подход позволит корректно показать открытую, но не закрытую операцию
- - при торговле - для фиксации в БД. Логикак как при сборе метрик
+Trading operation - transmitted at the opening and closing.
+  - in training is used to collect metrics
+  - when testing, I use it in the player. This approach will correctly show an open but not closed operation.
+  - when trading - for fixing in the database. Logic like when collecting metrics
 
 """
 import logging
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class RTCore:
     COLLECT_METRICS = True
-    """Реализация тренера с базовым набором фичей, без предсказания."""
+    """Implementation of a trainer with a basic set of features, without prediction."""
     def __init__(self, context, action_controller, observation):
         self.context = context
         self.action_controller = action_controller
@@ -28,7 +28,7 @@ class RTCore:
 
     @with_exception(RTCoreError)
     def get_action_space(self):
-        # todo реализовать метод в action_controller
+        # todo implement method in the action_controller
         action_space = len(self.action_controller.handler)
         logger.debug("Action space: {}".format(action_space))
         return action_space
