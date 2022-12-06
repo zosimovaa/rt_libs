@@ -22,7 +22,6 @@ class RTCore:
         self.context = context
         self.action_controller = action_controller
         self.observation_builder = observation
-
         self.metric_collector = MetricCollector()
         logger.debug("Instance initialized")
 

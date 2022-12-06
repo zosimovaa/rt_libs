@@ -19,22 +19,21 @@ class TradeAction(BaseAction):
         self.is_open = True
         self.trade_volume = 0
         self.profit = self.get_profit()
-        logger.debug("Trade {0} opened with {1} rate".format(self.id[-6:], self.open_price))
+        logger.debug("Trade %s opened with %s rate", self.id[-6:], self.open_price)
 
     def close(self):
+        """Method closes the trade and fix profit"""
         if self.is_open:
             self.close_ts = self.context.get("ts")
             self.close_price = self.context.get("highest_bid")
             self.profit = self.get_profit()
             self.is_open = False
-            logger.debug("Trade {0} closed with {1} rate and profit {2}".format(
-                self.id[-6:],
-                self.close_price,
-                self.profit))
+            logger.debug("Trade %s closed with %s rate and profit %s", self.id[-6:], self.close_price, self.profit)
         else:
-            logger.debug("Trade {0} already closed".format(self.id[-6:]))
+            logger.debug("Trade %s already closed", self.id[-6:])
 
     def get_profit(self):
+        """Method implements profit calculation """
         if self.is_open:
             profit = round(self.context.get("highest_bid") / self.open_price - 1 - self.market_fee, 5)
         else:
@@ -56,4 +55,42 @@ class AbstractTradeAction(TradeAction):
             profit = 0.
 
         #logger.debug("Profit {0}. Trade status {1}".format(profit, self.is_open))
+        return profit
+
+
+class SimpleTradeAction(BaseAction):
+    """The class describes a trade operation. Implementation without context
+    All parameters should be passed into methods
+    """
+    def __init__(self, ts, price, market_fee=0):
+        BaseAction.__init__(self)
+        self.open_ts = ts
+        self.open_price = price
+        self.market_fee = market_fee
+
+        self.close_ts = sys.maxsize
+        self.close_price = None
+
+        self.profit = 0
+
+        self.is_open = True
+        logger.debug('Trade %s opened with %s rate', self.id[-6:], self.open_price)
+
+    def close(self, ts, price):
+        """Method closes the trade and fix profit"""
+        if self.is_open:
+            self.close_ts = ts
+            self.close_price = price
+            self.profit = self.get_profit(price)
+            self.is_open = False
+            logger.debug("Trade %s closed with %s rate and profit %s", self.id[-6:], self.close_price, self.profit)
+        else:
+            logger.debug("Trade %s already closed", self.id[-6:])
+
+    def get_profit(self, price):
+        """Method implements profit calculation """
+        if self.is_open:
+            profit = round(price / self.open_price - 1 - self.market_fee, 5)
+        else:
+            profit = 0.
         return profit

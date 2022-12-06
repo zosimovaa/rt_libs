@@ -82,7 +82,6 @@ class BasicContext:
             self.set("profit", 0, domain="Trade")
             logger.debug("Trade updated")
 
-
     def set_trade(self, trade):
         self.trade = trade
         self.update_trade()

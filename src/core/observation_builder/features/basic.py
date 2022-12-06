@@ -87,3 +87,25 @@ class ProfitFeature(AbstractFeature):
         logger.debug("Get profit -> {0}".format(profit))
 
         return profit
+
+class OppositeProfitFeature(AbstractFeature):
+    """Opposit Profit calculation"""
+    def __init__(self, context, scale_factor=10):
+        super().__init__(context)
+        self.scale_factor = scale_factor
+
+    def _get(self):
+        timestamps = self.context.data_point.get_indexes()
+        data_point = self.context.data_point
+        opposite_trade = self.context.get("opposite_trade", domain="OppositeTrade")
+
+        if opposite_trade.is_open:
+            mask = (timestamps > opposite_trade.open_ts) & (timestamps <= opposite_trade.close_ts)
+            current_rates = data_point.get_values(name="highest_bid")
+            profit = current_rates / opposite_trade.open_price - 1
+            profit = profit * mask * self.scale_factor
+        else:
+            profit = np.zeros(len(timestamps))
+        logger.debug("Get profit -> {0}".format(profit))
+
+        return profit
