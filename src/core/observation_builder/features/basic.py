@@ -85,7 +85,6 @@ class ProfitFeature(AbstractFeature):
         else:
             profit = np.zeros(len(timestamps))
         logger.debug("Get profit -> {0}".format(profit))
-
         return profit
 
 class OppositeProfitFeature(AbstractFeature):
@@ -97,7 +96,7 @@ class OppositeProfitFeature(AbstractFeature):
     def _get(self):
         timestamps = self.context.data_point.get_indexes()
         data_point = self.context.data_point
-        opposite_trade = self.context.get("opposite_trade", domain="OppositeTrade")
+        opposite_trade = self.context.get("trade", domain="OppositeTrade")
 
         if opposite_trade.is_open:
             mask = (timestamps > opposite_trade.open_ts) & (timestamps <= opposite_trade.close_ts)

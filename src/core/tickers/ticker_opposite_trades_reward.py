@@ -3,7 +3,7 @@
 
 import logging
 import numpy as np
-from ..actions import BadAction, TradeAction, SimpleTradeAction
+from ..actions import BadAction, TradeAction, OppositeTradeAction
 
 
 logger = logging.getLogger(__name__)
@@ -26,30 +26,10 @@ class TickerOppositeTradesReward:
 
     def __init__(self, context, penalty=-2, reward=0):
         self.context = context
-
-        self.trade = None
-        self.opposite_trade = None
-
         self.penalty = penalty
         self.reward = reward
 
         logger.info("Initialized with penalty %s and reward %s.", penalty, reward)
-
-    def reset(self):
-        self.trade = None
-        # Инициализация данных для расчета профита без торговой операции
-        opposite_trade_open_price = self.context.get("highest_bid")
-        ts = self.context.get("ts")
-        self.opposite_trade = SimpleTradeAction(ts, opposite_trade_open_price)
-        self.context.set("opposite_trade", self.opposite_trade, domain="OppositeTrade")
-        logger.warning("Reset")
-
-    def apply_action(self, action):
-        ts = self.context.get("ts")
-        is_open = self.context.get("is_open", domain="Trade")
-        handler = getattr(self, self.handler[action])
-        reward, action_result = handler(ts, is_open)
-        return reward, action_result
 
     def _get_penalty(self, val=None):
         """Расчет штрафа. Если штраф не задан явно, то берем из базового значения"""
@@ -57,7 +37,23 @@ class TickerOppositeTradesReward:
         logger.debug("_get_penalty(): -> {0}".format(value))
         return value
 
+    def reset(self):
+        # Инициализация торговой операции для работы с просадкой
+        opposite_trade = OppositeTradeAction(self.context)
+        self.context.set("trade", opposite_trade, domain="OppositeTrade")
+        logger.warning("Reset")
+
+    def apply_action(self, action):
+        """Роутер для перехода в нужный обработчик"""
+        is_open = self.context.get_trade_status()
+        ts = self.context.get("ts")
+
+        handler = getattr(self, self.handler[action])
+        reward, action_result = handler(ts, is_open)
+        return reward, action_result
+
     def _action_waiting(self, ts, is_open):
+        "Награду за wait рассчитываем как разницу поледних точек"
         if is_open:
             reward = self._get_penalty()
             action_result = BadAction(self.context)
@@ -73,16 +69,16 @@ class TickerOppositeTradesReward:
             reward = self._get_penalty()
             action_result = BadAction(self.context)
         else:
-            trade_open_price = self.context.get("lowest_ask")
-            self.opposite_trade = SimpleTradeAction(ts, trade_open_price, market_fee=self.context.market_fee)
-            self.context.set_trade(self.trade)
-            action_result = self.trade
+            # Открыть сделку и изменить статус в контексте
+            action_result = TradeAction(self.context)
+            self.context.set("trade", action_result)
 
-            # Инициализация данных для расчета профита без торговой операции
-            opposite_trade_close_price = self.context.get("highest_bid")
-            self.opposite_trade.close(ts, opposite_trade_close_price)
+            # Закрыть opposite_trade и рассчитать награду
+            opposite_trade = self.context.get("trade", domain="OppositeTrade")
+            opposite_trade.close()
 
-            reward = -self.opposite_trade.profit * self.REWARD_OPEN
+            reward = -opposite_trade.profit * self.REWARD_OPEN
+
         return reward, action_result
 
     def _action_hold(self, ts, is_open):
@@ -98,16 +94,15 @@ class TickerOppositeTradesReward:
 
     def _action_close_trade(self, ts, is_open):
         if is_open:
-            trade_close_price = self.context.get("highest_bid")
-            self.trade.close(ts, trade_close_price)
+            highest_bid = self.context.get("highest_bid")
+            # Закрыть сделку
+            action_result = self.context.get("trade")
+            action_result.close(ts, highest_bid)
+            reward = action_result.profit * self.REWARD_CLOSE
 
-            reward = self.trade.profit * self.REWARD_CLOSE
-            action_result = self.trade
-
-            # Инициализация данных для расчета профита без торговой операции
-            opposite_trade_open_price = self.context.get("highest_bid")
-            self.opposite_trade = SimpleTradeAction(ts, opposite_trade_open_price)
-            self.context.set("opposite_trade", self.opposite_trade, domain="OppositeTrade")
+            # Открыть opposite_trade
+            self.opposite_trade = OppositeTradeAction(self.context)
+            self.context.set("trade", self.opposite_trade, domain="OppositeTrade")
 
         else:
             reward = self._get_penalty()

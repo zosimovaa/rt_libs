@@ -9,9 +9,8 @@ from .v1_basic import ObservationBuilderBasicMultiRate
 from .v1_basic import ObservationBuilderBasicMultiRateSeparate
 from .v1_with_trend_indicator import ObservationBuilderTrendIndicator
 
-from .v2_trades import ObservationBuilderTradeBalance
-from .v2_trades import ObservationBuilderOrderbook
-
 from .v3_orderbook_volumes import ObservationBuilderOrderbookTradeBalance
+
+from .v4_opposite_trades import ObservationBuilderOrderbookTradeBalance
 
 

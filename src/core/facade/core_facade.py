@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class RTCore:
     COLLECT_METRICS = True
-    """Implementation of a trainer with a basic set of features, without prediction."""
+    """Implementation of a trainer with a basic set of features."""
     def __init__(self, context, action_controller, observation):
         self.context = context
         self.action_controller = action_controller
@@ -29,17 +29,17 @@ class RTCore:
     def get_action_space(self):
         # todo implement method in the action_controller
         action_space = len(self.action_controller.handler)
-        logger.debug("Action space: {}".format(action_space))
+        logger.debug("Action space: %s", action_space)
         return action_space
 
     @with_exception(RTCoreError)
     def reset(self, data_point=None):
-        logger.debug("Reset")
-        self.context.reset()
         self.metric_collector.reset()
+        self.context.reset()
         self.context.update_datapoint(data_point)
         self.observation_builder.reset()
         self.action_controller.reset()
+        logger.debug("Reset")
 
     @with_exception(RTCoreError)
     def get_observation(self, data_point):

@@ -5,6 +5,7 @@ from .basic import TradeStateFeature
 from .basic import Rates1DFeature
 from .basic import Rates2DFactorFeature
 from .basic import ProfitFeature
+from .basic import OppositeProfitFeature
 
 from .trend_indicator import TrendIndicatorFeature
 
