@@ -13,4 +13,5 @@ from .v3_orderbook_volumes import ObservationBuilderOrderbookTradeBalance
 
 from .v4_opposite_trades import ObservationBuilderOrderbookTradeBalance
 
+from .v2_trades import ObservationBuilderOrderbookOppositeTrade
 
