@@ -33,7 +33,7 @@ class Rates1DFeature(AbstractFeature):
         current_price = data_point.get_value("highest_bid")
         rates = (data_point.get_values(name="highest_bid") / current_price - 1) * self.scale_factor
         logger.debug("Get rates -> current price {0} | {1}".format(current_price, rates))
-        return rates
+        return rates.reshape(-1, 1)
 
 
 class Rates2DFactorFeature(AbstractFeature):
@@ -85,7 +85,7 @@ class ProfitFeature(AbstractFeature):
         else:
             profit = np.zeros(len(timestamps))
         logger.debug("Get profit -> {0}".format(profit))
-        return profit
+        return profit.reshape(-1, 1)
 
 class OppositeProfitFeature(AbstractFeature):
     """Opposit Profit calculation"""
@@ -107,4 +107,4 @@ class OppositeProfitFeature(AbstractFeature):
             profit = np.zeros(len(timestamps))
         logger.debug("Get profit -> {0}".format(profit))
 
-        return profit
+        return profit.reshape(-1, 1)

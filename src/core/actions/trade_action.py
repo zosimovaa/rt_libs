@@ -47,7 +47,7 @@ class OppositeTradeAction(TradeAction):
     def __init__(self, context):
         TradeAction.__init__(self, context)
         self.open_price = self.context.get("highest_bid")
-        self.market_fee = self.context.market_fee
+        self.market_fee = 0
 
 class AbstractTradeAction(TradeAction):
     """The class describes a trading operation for the first stage of learning on abstract data"""
