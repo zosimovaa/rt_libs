@@ -9,11 +9,13 @@ import train_tools.live_train_plot as train_plot
 class TradeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, core, dp_factory, alias="test run"):
+    def __init__(self, core, dp_factory, alias="test run", log=False, log_obs=False):
         super().__init__()
         self.alias = alias
         self.core = core
         self.dp_factory = dp_factory
+        self.log = log
+        self.log_obs = log_obs
 
         self.live_train_plot = train_plot.LiveTrainPlot(self.alias)
 
@@ -26,19 +28,16 @@ class TradeEnv(gym.Env):
         self.logger = logging.getLogger(__name__)
         self.logger = logger_setup(self.logger, self.alias)
 
-        metrics = self.core.get_metrics()
-        # todo это можно выпилить, я больше не смотрю метрики из файла
-        self.logger.warning(";".join(metrics.keys()))
+        self.observation_space = self.get_observation_space()
+        self.action_space = self.get_action_space()
 
         self.logger.info("Observation space {}".format(self.observation_space))
         self.step_num = 0
 
-    @property
-    def action_space(self):
+    def get_action_space(self):
         return self.core.get_action_space()
 
-    @property
-    def observation_space(self):
+    def get_observation_space(self):
         data_point = self.dp_factory.get_current_step()
         observation = self.core.get_observation(data_point)
 
@@ -51,9 +50,8 @@ class TradeEnv(gym.Env):
     def reset(self):
         self.step_num = 0
         metrics = self.core.get_metrics()
-        self.log_episode_result(metrics)
+        #self.log_episode_result(metrics)
         self.live_train_plot.update_plot(metrics)
-
 
         # Сброс датасета и подготовка наблюдения
         self.episode += 1
@@ -65,7 +63,7 @@ class TradeEnv(gym.Env):
 
     def step(self, action):
         reward, action_result = self.core.apply_action(action)
-        self.step_info = self.get_step_info()
+        #self.step_info = self.get_step_info()
 
         # new cycle ->>>
         data_point, done = self.dp_factory.get_next_step()
@@ -75,12 +73,14 @@ class TradeEnv(gym.Env):
         return observation, reward, done, self.step_info
 
     def render(self, mode='ansi'):
-        message = "Cursor: {cursor:<5} | State: {state:<2} ---> Action: {action:<3} ---> " \
-                  "Reward: {reward:<8.3f} | Profit: {profit:<8.3f} | Total reward: {total_reward:<8.3f} | " \
-                  "Balance: {balance:<8.3f} |---| {observation}"
-
-        message = message.format(**self.step_info)
-        self.logger.info(message)
+        if self.log:
+            self.step_info = self.get_step_info()
+            message = "Cursor: {cursor:<5} | Action: {action:<3} -> | State: {state:<2} -> | " \
+                      "Reward: {reward:>8.3f} | Profit: {profit:>8.3f} | TotReward: {total_reward:>9.3f} | " \
+                      "Balance: {balance:>8.3f} | lowest_ask: {lowest_ask:>9.3f} | highest_bid: {highest_bid:>9.3f} |" \
+                      " |---| {observation}"
+            message = message.format(**self.step_info)
+            self.logger.info(message)
 
     def log_episode_result(self, metrics):
         """Метод записывает данные в лог для оффлайн лог ридера"""
@@ -90,16 +90,22 @@ class TradeEnv(gym.Env):
 
     def get_step_info(self):
         """Метод записывает данные в лог для детального разбора того, что происходит"""
+        if self.log_obs:
+            obs = obs_to_string(self.core.context.get("observation", domain="Data"))
+        else:
+            obs = None
+
         step_info = {
             "cursor": self.core.context.get("ts"),
-            "state": self.core.context.get("is_open_prev", default=False, domain="Trade"),
-            "price": self.core.context.get("highest_bid"),
-            "observation": obs_to_string(self.core.context.get("observation", domain="Data")),
+            "state": self.core.context.get("is_open", default=False, domain="Trade"),
+            "observation": obs,
             "action": self.core.context.get("action", domain="Action"),
             "reward": self.core.context.get("reward", domain="Action"),
             "total_reward": self.core.metric_collector.get_metric("TotalReward"),
             "balance": self.core.metric_collector.get_metric("Balance"),
             "profit": self.core.context.get("profit", domain="Trade"),
+            "lowest_ask": self.core.context.get("lowest_ask"),
+            "highest_bid": self.core.context.get("highest_bid")
         }
         return step_info
 

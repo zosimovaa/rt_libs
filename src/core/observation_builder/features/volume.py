@@ -16,7 +16,7 @@ class TradeBalanceFeature(AbstractFeature):
 
     def _get(self):
         dp = self.context.data_point
-        buy_vol = dp.get_values(name="buy_vol")
-        sell_vol = dp.get_values(name="sell_vol")
+        buy_vol = dp.get_values("buy_vol")
+        sell_vol = dp.get_values("sell_vol")
         trade_balance = (buy_vol - sell_vol) / (buy_vol + sell_vol + self.DELTA)
         return trade_balance

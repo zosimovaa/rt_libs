@@ -15,69 +15,38 @@ array([[-1.9651896e-01,  0.0000000e+00],
 import logging
 import numpy as np
 
-from .interface import ObservationBuilderInterface
-from .features import TradeStateFeature
-from .features import Rates1DFeature
-from .features import Rates2DFactorFeature
-from .features import ProfitFeature
+from core.observation_builder.interface import ObservationBuilderInterface
+from core.observation_builder.features import TradeStateFeature
+from core.observation_builder.features import OrderbookDiffFeature2D
+from core.observation_builder.features import ProfitFeature
+from core.observation_builder.features import TradeBalanceFeature
+from core.observation_builder.features import Rates2DFactorFeature
 
 
 logger = logging.getLogger(__name__)
 
 
-class ObservationBuilderBasic(ObservationBuilderInterface):
-    def __init__(self, context):
-        """Конструктор класса"""
-        self.context = context
-        self.trade_state_feat = TradeStateFeature(context)
-        self.rate_feat = Rates1DFeature(context)
-        self.profit_feat = ProfitFeature(context)
-
-    def reset(self):
-        """Сброс параметров"""
-        self.trade_state_feat.reset()
-        self.rate_feat.reset()
-        self.profit_feat.reset()
-
-    def get(self, data_point):
-        trade_state = self.trade_state_feat.get()
-        rates = self.rate_feat.get()
-        profit = self.profit_feat.get()
-
-        # ------------------------------------------
-        # observation
-        static_data = [trade_state]
-
-        conv_data = np.concatenate([
-            rates.reshape(-1, 1),
-            profit.reshape(-1, 1)
-        ], axis=1)
-
-        observation = [
-            np.array(static_data, dtype=np.float32),
-            np.array(conv_data, dtype=np.float32)
-        ]
-        return observation
-
-
-class ObservationBuilderBasicMultiRate(ObservationBuilderInterface):
+class ObservationBuilderTradeBalance(ObservationBuilderInterface):
     def __init__(self, context, step_factor=(1, 3, 12)):
         """Конструктор класса"""
         self.context = context
         self.trade_state_feat = TradeStateFeature(context)
         self.rate_feat = Rates2DFactorFeature(context, step_factor=step_factor)
         self.profit_feat = ProfitFeature(context)
+        self.balance_feat = TradeBalanceFeature(context)
 
     def reset(self):
         """Сброс параметров"""
         self.trade_state_feat.reset()
         self.rate_feat.reset()
         self.profit_feat.reset()
+        self.balance_feat.reset()
 
     def get(self, data_point):
         trade_state = self.trade_state_feat.get()
         rates2d = self.rate_feat.get()
         profit = self.profit_feat.get()
+        trade_balance = self.balance_feat.get()
 
         # ------------------------------------------
         # observation
@@ -85,7 +54,8 @@ class ObservationBuilderBasicMultiRate(ObservationBuilderInterface):
 
         conv_data = np.concatenate([
             rates2d,
-            profit.reshape(-1, 1)
+            profit.reshape(-1, 1),
+            trade_balance.reshape(-1, 1)
         ], axis=1)
 
         observation = [
@@ -95,36 +65,40 @@ class ObservationBuilderBasicMultiRate(ObservationBuilderInterface):
         return observation
 
 
-class ObservationBuilderBasicMultiRateSeparate(ObservationBuilderInterface):
-    def __init__(self, context, step_factor=(1, 3, 12)):
+class ObservationBuilderOrderbook(ObservationBuilderInterface):
+    def __init__(self, context, step_factor=(1, 3, 12), levels=None):
         """Конструктор класса"""
-        if step_factor is None:
-            step_factor = [1, 3, 12]
         self.context = context
         self.trade_state_feat = TradeStateFeature(context)
         self.rate_feat = Rates2DFactorFeature(context, step_factor=step_factor)
         self.profit_feat = ProfitFeature(context)
+        self.orderbook_feat = OrderbookDiffFeature2D(context, levels=levels)
 
     def reset(self):
         """Сброс параметров"""
         self.trade_state_feat.reset()
         self.rate_feat.reset()
         self.profit_feat.reset()
+        self.orderbook_feat.reset()
 
     def get(self, data_point):
         trade_state = self.trade_state_feat.get()
         rates2d = self.rate_feat.get()
         profit = self.profit_feat.get()
+        orderbook2d = self.orderbook_feat.get()
 
         # ------------------------------------------
         # observation
         static_data = [trade_state]
-        conv_rates = rates2d
-        conv_profit = profit.reshape(-1, 1)
+
+        conv_data = np.concatenate([
+            rates2d,
+            profit.reshape(-1, 1),
+            orderbook2d,
+        ], axis=1)
 
         observation = [
             np.array(static_data, dtype=np.float32),
-            np.array(conv_rates, dtype=np.float32),
-            np.array(conv_profit, dtype=np.float32)
+            np.array(conv_data, dtype=np.float32)
         ]
         return observation

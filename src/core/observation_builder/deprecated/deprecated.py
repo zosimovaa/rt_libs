@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from collections import deque
 
-from .interface import ObservationBuilderInterface
+from core.observation_builder.interface import ObservationBuilderInterface
 
 logger = logging.getLogger(__name__)
 

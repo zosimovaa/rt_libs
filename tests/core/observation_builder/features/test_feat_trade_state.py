@@ -71,5 +71,6 @@ class TradeStateTestCase(unittest.TestCase):
         expected = False
         self.assertEqual(observed, expected)
 
+
 if __name__ == '__main__':
     unittest.main()

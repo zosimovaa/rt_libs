@@ -6,10 +6,9 @@ from abc import ABC, abstractmethod
 
 class ObservationBuilderInterface(ABC):
     @abstractmethod
-    def get(self, datapoint):
+    def get(self):
         """
         Метод формирует сэмл наблюдения
-        :param datapoint: DataPoint object
         :return: observation sample, np.array или list of np.array
         """
         pass

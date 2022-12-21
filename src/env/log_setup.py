@@ -11,11 +11,11 @@ def logger_setup(log, alias, log_dir="logs"):
         os.makedirs(log_path)
 
     # Episode log
-    full_path = os.path.join(log_path, alias + "_episode" + '.log')
-    fh_episode = logging.FileHandler(full_path, mode='w')
-    fh_episode.setLevel(logging.WARNING)
-    fh_episode.setFormatter(FORMATTER)
-    log.addHandler(fh_episode)  # set the new handler
+    #full_path = os.path.join(log_path, alias + "_episode" + '.log')
+    #fh_episode = logging.FileHandler(full_path, mode='w')
+    #fh_episode.setLevel(logging.WARNING)
+    #fh_episode.setFormatter(FORMATTER)
+    #log.addHandler(fh_episode)  # set the new handler
 
     # Step log
     full_path = os.path.join(log_path, alias + "_step" + '.log')

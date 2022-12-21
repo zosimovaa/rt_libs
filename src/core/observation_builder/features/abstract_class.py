@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractFeature(metaclass=abc.ABCMeta):
-    """For simple, not heavy to calculate features"""
+    """Calculate features on the fly"""
 
     def __init__(self, context):
         self.context = context
@@ -31,7 +31,7 @@ class AbstractFeature(metaclass=abc.ABCMeta):
     def reset(self) -> None:
         """Reset to initial state. Relevant for the heirs of AbstractFeatureWithHistory"""
         if self.scale_is_broken:
-            logger.warning("{0}: Scale is broken".format(self.__class__.__name__))
+            #logger.warning("{0}: Scale is broken".format(self.__class__.__name__))
             self.scale_is_broken = False
         pass
 

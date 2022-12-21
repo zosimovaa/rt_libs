@@ -35,7 +35,7 @@ class ObservationBuilder2Dim(ObservationBuilderInterface):
         for feat in self.series:
             feat.reset()
 
-    def get(self, data_point):
+    def get(self):
         static_data = [feat.get() for feat in self.static]
         series_data = [feat.get() for feat in self.series]
         series_data = np.concatenate(series_data, axis=1)

@@ -4,16 +4,11 @@ from .v0_abstract_builder import AbstractObservationBuilderCloseSignal
 from .v0_abstract_builder import AbstractObservationBuilderOpenSignal
 from .v0_abstract_builder import AbstractObservationBuilderCompleteTrade
 
-from .v1_basic import ObservationBuilderBasic
-from .v1_basic import ObservationBuilderBasicMultiRate
-from .v1_basic import ObservationBuilderBasicMultiRateSeparate
-from .v1_with_trend_indicator import ObservationBuilderTrendIndicator
+#from .v1_basic import ObservationBuilderBasic
+#from .v1_basic import ObservationBuilderBasicMultiRateSeparate
+#from core.observation_builder.deprecated.v1_with_trend_indicator import ObservationBuilderTrendIndicator
 
-from .v2_trades import ObservationBuilderTradeBalance, ObservationBuilderOrderbook
-
-from .v3_orderbook_volumes import ObservationBuilderOrderbookTradeBalance
-
-from .v4_opposite_trades import ObservationBuilderOrderbookOppositeTrade
+#from .v3_orderbook_volumes import ObservationBuilderOrderbookTradeBalance
 
 from .v5_universal import ObservationBuilder2Dim
 

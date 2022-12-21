@@ -14,7 +14,6 @@ class TickerBasic:
     """
     REWARD_OPEN = 10
     REWARD_CLOSE = 100
-    NUM_MEAN_OBS = 2
 
     handler = {
         0: "_action_waiting",
@@ -34,7 +33,6 @@ class TickerBasic:
 
     def reset(self):
         self.trade = None
-        logger.warning("Reset")
 
     def apply_action(self, action):
         ts = self.context.get("ts")
@@ -140,8 +138,9 @@ class TickerExtendedReward(TickerBasic):
     def get_last_diffs(self, column='lowest_ask'):
         data_point = self.context.data_point
         num = self.NUM_MEAN_OBS + 1
-        feature = data_point.get_values(name=column, num=num, as_ndarray=False)
-        return feature.diff().dropna().values
+        feature_values = data_point.get_values(column, num=num)
+        result = np.diff(feature_values)
+        return result
 
 
 class TickerExtendedReward2(TickerExtendedReward):

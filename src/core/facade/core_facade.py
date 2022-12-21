@@ -39,12 +39,11 @@ class RTCore:
         self.context.update_datapoint(data_point)
         self.observation_builder.reset()
         self.action_controller.reset()
-        logger.debug("Reset")
 
     @with_exception(RTCoreError)
     def get_observation(self, data_point):
         self.context.update_datapoint(data_point)
-        observation = self.observation_builder.get(data_point)
+        observation = self.observation_builder.get()
         self.context.set("observation", observation, domain="Data")
         return observation
 
@@ -55,8 +54,6 @@ class RTCore:
         self.context.set("reward", reward, domain="Action")
         if self.COLLECT_METRICS:
             self.metric_collector.process(reward, action_result)
-        logger.debug("Action applied | reward: {0:.4f}".format(reward))
-        logger.debug("Action type returned {0}".format(type(action_result)))
         return reward, action_result
 
     @with_exception(RTCoreError)

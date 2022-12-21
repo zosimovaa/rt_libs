@@ -130,8 +130,9 @@ class DQN:
                 state_next, reward, done, _ = self.env.step(action)
                 state_next = np.array(state_next)
 
+                #if self.frame_count % 500 == 0:
                 self.env.render() #; Adding this line would show the attempts
-                # of the agent in a pop up window.
+                    # of the agent in a pop up window.
 
                 episode_reward += reward
 

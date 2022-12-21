@@ -15,38 +15,41 @@ array([[-1.9651896e-01,  0.0000000e+00],
 import logging
 import numpy as np
 
+from core.observation_builder.interface import ObservationBuilderInterface
+from core.observation_builder.features import TradeStateFeature
+from core.observation_builder.features import OrderbookDiffFeature2D
+from core.observation_builder.features import ProfitFeature
+from core.observation_builder.features import TradeBalanceFeature
+from core.observation_builder.features import Rates2DFactorFeature
 
-from .interface import ObservationBuilderInterface
-from .features import TradeStateFeature
-from .features import Rates1DFeature
-from .features import ProfitFeature
-from .features import TrendIndicatorFeature
-from .features import Rates2DFactorFeature
 
 logger = logging.getLogger(__name__)
 
 
-class ObservationBuilderTrendIndicator(ObservationBuilderInterface):
-    def __init__(self, context, step_factor=(1, 3, 12)):
+class ObservationBuilderOrderbookTradeBalance(ObservationBuilderInterface):
+    def __init__(self, context, step_factor=(1, 3, 12), levels=None):
         """Конструктор класса"""
         self.context = context
         self.trade_state_feat = TradeStateFeature(context)
         self.rate_feat = Rates2DFactorFeature(context, step_factor=step_factor)
         self.profit_feat = ProfitFeature(context)
-        self.trend_feat = TrendIndicatorFeature(context)
+        self.orderbook_feat = OrderbookDiffFeature2D(context, levels=levels)
+        self.balance_feat = TradeBalanceFeature(context)
 
     def reset(self):
         """Сброс параметров"""
         self.trade_state_feat.reset()
         self.rate_feat.reset()
         self.profit_feat.reset()
-        self.trend_feat.reset()
+        self.orderbook_feat.reset()
+        self.balance_feat.reset()
 
     def get(self, data_point):
         trade_state = self.trade_state_feat.get()
         rates2d = self.rate_feat.get()
         profit = self.profit_feat.get()
-        trend = self.trend_feat.get()
+        orderbook2d = self.orderbook_feat.get()
+        trade_balance = self.balance_feat.get()
 
         # ------------------------------------------
         # observation
@@ -55,7 +58,8 @@ class ObservationBuilderTrendIndicator(ObservationBuilderInterface):
         conv_data = np.concatenate([
             rates2d,
             profit.reshape(-1, 1),
-            trend.reshape(-1, 1)
+            orderbook2d,
+            trade_balance.reshape(-1, 1)
         ], axis=1)
 
         observation = [

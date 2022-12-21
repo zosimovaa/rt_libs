@@ -18,7 +18,7 @@ class AbstractObservationBuilderSequencePrediction(ObservationBuilderInterface):
     def reset(self):
         pass
 
-    def get(self, data_point):
+    def get(self):
         # trade state feature
         trade_state = self.context.get("is_open", domain="Trade")
 
@@ -35,7 +35,7 @@ class AbstractObservationBuilderCloseSignal(ObservationBuilderInterface):
     def reset(self):
         pass
 
-    def get(self, data_point):
+    def get(self):
         # trade state feature
         trade_state = self.context.get("is_open", domain="Trade")
 
@@ -55,7 +55,7 @@ class AbstractObservationBuilderOpenSignal(ObservationBuilderInterface):
     def reset(self):
         pass
 
-    def get(self, data_point):
+    def get(self):
         # trade state feature
         trade_state = self.context.get("is_open", domain="Trade")
 
@@ -82,7 +82,7 @@ class AbstractObservationBuilderCompleteTrade(ObservationBuilderInterface):
     def reset(self):
         pass
 
-    def get(self, data_point):
+    def get(self):
         # trade state feature
         trade_state = self.context.get("is_open", domain="Trade")
 

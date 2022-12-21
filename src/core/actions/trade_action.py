@@ -20,7 +20,7 @@ class TradeAction(BaseAction):
         self.close_ts = sys.maxsize
         self.close_price = None
         self.profit = 0
-        logger.debug("Trade %s opened with %s rate", self.id[-6:], self.open_price)
+        #logger.debug("Trade %s opened with %s rate", self.id[-6:], self.open_price)
 
     def close(self):
         """Method closes the trade and fix profit"""
@@ -29,9 +29,10 @@ class TradeAction(BaseAction):
             self.close_price = self.context.get("highest_bid")
             self.profit = self.get_profit()
             self.is_open = False
-            logger.debug("Trade %s closed with %s rate and profit %s", self.id[-6:], self.close_price, self.profit)
+            #logger.debug("Trade %s closed with %s rate and profit %s", self.id[-6:], self.close_price, self.profit)
         else:
-            logger.debug("Trade %s already closed", self.id[-6:])
+            #logger.debug("Trade %s already closed", self.id[-6:])
+            pass
 
     def get_profit(self):
         """Method implements profit calculation """
@@ -43,11 +44,13 @@ class TradeAction(BaseAction):
         #logger.debug("Profit {0}. Trade status {1}".format(profit, self.is_open))
         return profit
 
+
 class OppositeTradeAction(TradeAction):
     def __init__(self, context):
-        TradeAction.__init__(self, context)
+        super().__init__(context)
         self.open_price = self.context.get("highest_bid")
         self.market_fee = 0
+
 
 class AbstractTradeAction(TradeAction):
     """The class describes a trading operation for the first stage of learning on abstract data"""
@@ -59,6 +62,4 @@ class AbstractTradeAction(TradeAction):
             profit = self.context.get("highest_bid") - self.open_price
         else:
             profit = 0.
-        #logger.debug("Profit {0}. Trade status {1}".format(profit, self.is_open))
         return profit
-

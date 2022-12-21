@@ -1,6 +1,7 @@
 """Модуль реализует тестирование класса BadAction"""
 
 import unittest
+import numpy as np
 
 from tests.test_dataset import TestDatasetGenerator
 
@@ -38,38 +39,34 @@ class Rates1DTestCase(unittest.TestCase):
         # ==== Step 1 ====
         data_point = self.dpf.get_current_step()
         self.context.update_datapoint(data_point)
+        scale_factor = 5
 
-        trade_state_feat = Rates1DFeature(self.context)
-        trade_state_feat.reset()
+        rates_feat = Rates1DFeature(self.context, scale_factor=scale_factor)
+        rates_feat.reset()
 
-        observed = trade_state_feat.get()
-        expected = False
-        self.assertEqual(observed, expected)
+        observed = rates_feat.get()
+        expected = np.array(self.dataset.loc[:, "highest_bid"].values[:self.n_observation_points])
+        expected = expected / expected[-1] - 1
+        expected = expected * scale_factor
+
+        for i in range(len(expected)):
+            self.assertEqual(np.round(observed[i][0], 3), np.round(expected[i], 3))
+
 
         # ==== Step 2 ====
-        trade_action = TradeAction(self.context)
-        self.context.set_trade(trade_action)
-        # check trade
-        observed = trade_state_feat.get()
-        expected = True
-        self.assertEqual(observed, expected)
 
-        # ==== Step 3 ====
         data_point, done = self.dpf.get_next_step()
         self.context.update_datapoint(data_point)
-        # check trade
-        observed = trade_state_feat.get()
-        expected = True
-        self.assertEqual(observed, expected)
 
-        # ==== Step 4 ====
-        trade_action.close()
-        data_point, done = self.dpf.get_next_step()
-        self.context.update_datapoint(data_point)
-        # check trade
-        observed = trade_state_feat.get()
-        expected = False
-        self.assertEqual(observed, expected)
+        observed = rates_feat.get()
+        expected = np.array(self.dataset.loc[:, "highest_bid"].values[1:self.n_observation_points+1])
+        expected = expected / expected[-1] - 1
+        expected = expected * scale_factor
+
+
+
+        for i in range(len(expected)):
+            self.assertEqual(np.round(observed[i][0], 3), np.round(expected[i], 3))
 
 if __name__ == '__main__':
     unittest.main()

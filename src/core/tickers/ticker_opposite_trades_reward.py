@@ -41,11 +41,11 @@ class TickerOppositeTradesReward:
         # Инициализация торговой операции для работы с просадкой
         opposite_trade = OppositeTradeAction(self.context)
         self.context.set("trade", opposite_trade, domain="OppositeTrade")
-        logger.warning("Reset")
+        logger.debug("Reset")
 
     def apply_action(self, action):
         """Роутер для перехода в нужный обработчик"""
-        is_open = self.context.get_trade_status()
+        is_open = self.context.get("is_open", domain="Trade")
         ts = self.context.get("ts")
 
         handler = getattr(self, self.handler[action])
@@ -71,12 +71,12 @@ class TickerOppositeTradesReward:
         else:
             # Открыть сделку и изменить статус в контексте
             action_result = TradeAction(self.context)
-            self.context.set("trade", action_result)
+            self.context.set_trade(action_result)
 
             # Закрыть opposite_trade и рассчитать награду
             opposite_trade = self.context.get("trade", domain="OppositeTrade")
             opposite_trade.close()
-
+            #РАЗОБРАТЬСЯ
             reward = -opposite_trade.profit * self.REWARD_OPEN
 
         return reward, action_result
@@ -96,8 +96,8 @@ class TickerOppositeTradesReward:
         if is_open:
             highest_bid = self.context.get("highest_bid")
             # Закрыть сделку
-            action_result = self.context.get("trade")
-            action_result.close(ts, highest_bid)
+            action_result = self.context.trade
+            action_result.close()
             reward = action_result.profit * self.REWARD_CLOSE
 
             # Открыть opposite_trade
@@ -112,5 +112,6 @@ class TickerOppositeTradesReward:
     def get_last_diffs(self, column='lowest_ask'):
         data_point = self.context.data_point
         num = self.NUM_MEAN_OBS + 1
-        feature = data_point.get_values(name=column, num=num, as_ndarray=False)
-        return feature.diff().dropna().values
+        feature_values = data_point.get_values(column, num=num)
+        result = np.diff(feature_values)
+        return result
