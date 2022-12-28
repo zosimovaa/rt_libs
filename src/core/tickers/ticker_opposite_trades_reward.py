@@ -115,3 +115,28 @@ class TickerOppositeTradesReward:
         feature_values = data_point.get_values(column, num=num)
         result = np.diff(feature_values)
         return result
+
+
+class TickerOppositeTradesReward2(TickerOppositeTradesReward):
+    """На холде будет строить награду из профита"""
+
+    def _action_hold(self, ts, is_open):
+        if is_open:
+            profit = self.context.get("profit", domain="Trade")
+            reward = profit * self.REWARD_HOLD
+            action_result = None
+        else:
+            reward = self._get_penalty()
+            action_result = BadAction(self.context)
+        return reward, action_result
+
+    def _action_wating(self, ts, is_open):
+        if is_open:
+            reward = self._get_penalty()
+            action_result = BadAction(self.context)
+        else:
+            ot = self.context.get("trade", domain="OppositeTrade")
+            profit = ot.get_profit()
+            reward = -profit * self.REWARD_WAIT
+            action_result = None
+        return reward, action_result

@@ -9,7 +9,7 @@ import train_tools.live_train_plot as train_plot
 class TradeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, core, dp_factory, alias="test run", log=False, log_obs=False):
+    def __init__(self, core, dp_factory, alias="test run", log=True, log_obs=True):
         super().__init__()
         self.alias = alias
         self.core = core

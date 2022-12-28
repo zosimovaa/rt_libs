@@ -157,6 +157,9 @@ class TickerExtendedReward2(TickerExtendedReward):
         return reward, action_result
 
 
+
+
+
 class TickerOppositeTradeReward:
     """
     """
