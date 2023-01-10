@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 class TickerOppositeTradesReward:
 
-    REWARD_WAIT = 10
-    REWARD_OPEN = 10
-    REWARD_HOLD = 10
-    REWARD_CLOSE = 100
-    NUM_MEAN_OBS = 2
+    reward_wait = 10
+    reward_open = 10
+    reward_hold = 10
+    reward_close = 100
+    num_mean_obs = 2
 
     handler = {
         0: "_action_waiting",
@@ -60,7 +60,7 @@ class TickerOppositeTradesReward:
         else:
             last_data_points_diff = self.get_last_diffs()
             rates_diff_mean = np.mean(last_data_points_diff)
-            reward = -rates_diff_mean / self.context.get("highest_bid") * self.REWARD_WAIT
+            reward = -rates_diff_mean / self.context.get("highest_bid") * self.reward_wait
             action_result = None
         return reward, action_result
 
@@ -77,7 +77,7 @@ class TickerOppositeTradesReward:
             opposite_trade = self.context.get("trade", domain="OppositeTrade")
             opposite_trade.close()
             #РАЗОБРАТЬСЯ
-            reward = -opposite_trade.profit * self.REWARD_OPEN
+            reward = -opposite_trade.profit * self.reward_open
 
         return reward, action_result
 
@@ -85,7 +85,7 @@ class TickerOppositeTradesReward:
         if is_open:
             last_data_points_diff = self.get_last_diffs()
             rates_diff_mean = np.mean(last_data_points_diff)
-            reward = rates_diff_mean / self.context.get("highest_bid") * self.REWARD_HOLD
+            reward = rates_diff_mean / self.context.get("highest_bid") * self.reward_hold
             action_result = None
         else:
             reward = self._get_penalty()
@@ -98,7 +98,7 @@ class TickerOppositeTradesReward:
             # Закрыть сделку
             action_result = self.context.trade
             action_result.close()
-            reward = action_result.profit * self.REWARD_CLOSE
+            reward = action_result.profit * self.reward_close
 
             # Открыть opposite_trade
             self.opposite_trade = OppositeTradeAction(self.context)
@@ -111,7 +111,7 @@ class TickerOppositeTradesReward:
 
     def get_last_diffs(self, column='lowest_ask'):
         data_point = self.context.data_point
-        num = self.NUM_MEAN_OBS + 1
+        num = self.num_mean_obs + 1
         feature_values = data_point.get_values(column, num=num)
         result = np.diff(feature_values)
         return result
@@ -123,7 +123,7 @@ class TickerOppositeTradesReward2(TickerOppositeTradesReward):
     def _action_hold(self, ts, is_open):
         if is_open:
             profit = self.context.get("profit", domain="Trade")
-            reward = profit * self.REWARD_HOLD
+            reward = profit * self.reward_hold
             action_result = None
         else:
             reward = self._get_penalty()
@@ -137,6 +137,6 @@ class TickerOppositeTradesReward2(TickerOppositeTradesReward):
         else:
             ot = self.context.get("trade", domain="OppositeTrade")
             profit = ot.get_profit()
-            reward = -profit * self.REWARD_WAIT
+            reward = -profit * self.reward_wait
             action_result = None
         return reward, action_result

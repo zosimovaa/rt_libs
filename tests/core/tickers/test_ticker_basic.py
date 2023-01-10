@@ -47,8 +47,8 @@ class TickerBasicTestCase(unittest.TestCase):
         # ==== Step 1 - подготовка тикера ====
         ticker = TickerBasic(self.context, penalty=self.penalty, reward=self.reward)
 
-        ticker.REWARD_OPEN = 1
-        ticker.REWARD_CLOSE = 1
+        ticker.reward_open = 1
+        ticker.reward_close = 1
 
         ticker.reset()
 
@@ -86,8 +86,8 @@ class TickerBasicTestCase(unittest.TestCase):
         # ==== Step 1 - подготовка тикера ====
         ticker = TickerBasic(self.context, penalty=self.penalty, reward=self.reward)
 
-        ticker.REWARD_OPEN = 1
-        ticker.REWARD_CLOSE = 1
+        ticker.reward_open = 1
+        ticker.reward_close = 1
         ticker.NUM_MEAN_OBS = 2
 
         ticker.reset()

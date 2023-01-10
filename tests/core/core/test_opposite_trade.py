@@ -47,11 +47,11 @@ class TickerBasicTestCase(unittest.TestCase):
 
         self.context = BasicContext(market_fee=self.market_fee)
         self.ticker = TickerOppositeTradesReward(self.context, penalty=self.penalty, reward=self.reward)
-        self.ticker.REWARD_OPEN = 1
-        self.ticker.REWARD_CLOSE = 1
-        self.ticker.REWARD_WAIT = 1
-        self.ticker.REWARD_HOLD = 1
-        self.ticker.NUM_MEAN_OBS = 2
+        self.ticker.reward_open = 1
+        self.ticker.reward_close = 1
+        self.ticker.reward_wait = 1
+        self.ticker.reward_hold = 1
+        self.ticker.num_mean_obs = 2
 
         trade_state_feat = TradeStateFeature(self.context)
         profit_feat = ProfitFeature(self.context, scale_factor=1)
@@ -72,7 +72,7 @@ class TickerBasicTestCase(unittest.TestCase):
 
         reward, action_result = self.core.apply_action(0)
         rates_diff_mean = np.mean(self.core.action_controller.get_last_diffs())
-        reward_exp = -rates_diff_mean / self.context.get("highest_bid") * self.ticker.REWARD_WAIT
+        reward_exp = -rates_diff_mean / self.context.get("highest_bid") * self.ticker.reward_wait
 
         self.assertEqual(np.round(reward, 5), np.round(reward_exp, 5))
 

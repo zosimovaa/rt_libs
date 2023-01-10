@@ -11,3 +11,6 @@ from .actions import BadAction, TradeAction
 
 from .facade import RTCore
 from .facade import RTCoreError
+
+from .constructor import ConstructorGen1
+

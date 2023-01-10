@@ -45,11 +45,11 @@ class TickerBasicTestCase(unittest.TestCase):
     def test_closed(self):
         # ==== Step 1 - подготовка тикера ====
         ticker = TickerOppositeTradesReward(self.context, penalty=self.penalty, reward=self.reward)
-        ticker.REWARD_OPEN = 1
-        ticker.REWARD_CLOSE = 1
-        ticker.REWARD_WAIT = 1
-        ticker.REWARD_HOLD = 1
-        ticker.NUM_MEAN_OBS = 2
+        ticker.reward_open = 1
+        ticker.reward_close = 1
+        ticker.reward_wait = 1
+        ticker.reward_hold = 1
+        ticker.num_mean_obs = 2
 
         # ==== Step 2 - тест без торговой операции ====
         data_point = self.dpf.get_current_step()
@@ -70,7 +70,7 @@ class TickerBasicTestCase(unittest.TestCase):
 
         # action = 0
         reward, action_result = ticker.apply_action(0)
-        reward_exp = - np.mean(ticker.get_last_diffs()) / self.context.get("highest_bid") * ticker.REWARD_WAIT
+        reward_exp = - np.mean(ticker.get_last_diffs()) / self.context.get("highest_bid") * ticker.reward_wait
         self.assertEqual(action_result, None)
         self.assertEqual(np.round(reward, 4), np.round(reward_exp, 4))
 
@@ -109,9 +109,9 @@ class TickerBasicTestCase(unittest.TestCase):
         # ==== Step 1 - подготовка тикера ====
         ticker = TickerOppositeTradesReward(self.context, penalty=self.penalty, reward=self.reward)
 
-        ticker.REWARD_OPEN = 1
-        ticker.REWARD_CLOSE = 1
-        ticker.NUM_MEAN_OBS = 2
+        ticker.reward_open = 1
+        ticker.reward_close = 1
+        ticker.num_mean_obs = 2
 
         data_point = self.dpf.get_current_step()
         self.context.update_datapoint(data_point)
@@ -137,7 +137,7 @@ class TickerBasicTestCase(unittest.TestCase):
 
         # action = 2
         reward, action_result = ticker.apply_action(2)
-        reward_exp = np.mean(ticker.get_last_diffs()) / self.context.get("highest_bid") * ticker.REWARD_WAIT
+        reward_exp = np.mean(ticker.get_last_diffs()) / self.context.get("highest_bid") * ticker.reward_wait
         self.assertEqual(action_result, None)
         self.assertEqual(np.round(reward, 4), np.round(reward_exp, 4))
 
