@@ -98,7 +98,7 @@ class DQN:
         tm_start = time.time()
         
         while True:  # Run until solved or reach max_frames
-            state = np.array(self.env.reset())
+            state = np.array(self.env.reset(), dtype=object)
             episode_reward = 0
 
             # env work cycle start

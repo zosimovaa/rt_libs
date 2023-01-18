@@ -44,12 +44,22 @@ class PrecomputeOrderbookDiffFeature(PrecomputeAbstractClass):
         index_length = len(idxs)
         for i in range(index_length - 1):
             idx_curr = idxs[i + 1]
-            asks_curr = json.loads(data.loc[idx_curr, "asks"].replace("\'", "\"")) #data.loc[idx_curr, "asks"]  #
-            bids_curr = json.loads(data.loc[idx_curr, "bids"].replace("\'", "\"")) #data.loc[idx_curr, "bids"]  #
-
             idx_prev = idxs[i]
-            asks_prev = json.loads(data.loc[idx_prev, "asks"].replace("\'", "\"")) # data.loc[idx_prev, "asks"]  #
-            bids_prev = json.loads(data.loc[idx_prev, "bids"].replace("\'", "\"")) # data.loc[idx_prev, "bids"]  #
+            try:
+                # Быстрый вариант для загрузки из файла
+                asks_curr = json.loads(data.loc[idx_curr, "asks"].replace("\'", "\""))  #
+                bids_curr = json.loads(data.loc[idx_curr, "bids"].replace("\'", "\""))  #
+
+                asks_prev = json.loads(data.loc[idx_prev, "asks"].replace("\'", "\""))  #
+                bids_prev = json.loads(data.loc[idx_prev, "bids"].replace("\'", "\""))  #
+
+            except Exception as e:
+                # Быстрый вариант для загрузки из БД
+                asks_curr = data.loc[idx_curr, "asks"]  # json.loads(data.loc[idx_curr, "asks"].replace("\'", "\"")) #
+                bids_curr = data.loc[idx_curr, "bids"]  # json.loads(data.loc[idx_curr, "bids"].replace("\'", "\"")) #
+
+                asks_prev = data.loc[idx_prev, "asks"]  # json.loads(data.loc[idx_prev, "asks"].replace("\'", "\"")) #
+                bids_prev = data.loc[idx_prev, "bids"]  # json.loads(data.loc[idx_prev, "bids"].replace("\'", "\"")) #
 
             if len(asks_curr) and len(asks_prev) and len(bids_curr) and len(bids_prev):
                 lowest_ask = np.min(np.array(list(map(float, asks_prev.keys()))))
