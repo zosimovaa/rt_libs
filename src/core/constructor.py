@@ -4,6 +4,7 @@ from core import  context
 
 from core import context
 from core import tickers
+from core import action_controller
 from core import observation_builder
 from core.observation_builder import features
 
@@ -36,8 +37,8 @@ class ConstructorGen1:
         """Метод собирает экшн контроллер"""
         class_name = config.get("class")
         params = config.get("params")
-        action_controller = getattr(tickers, class_name)(context, **params)
-        return action_controller
+        action_controller_instance = getattr(action_controller, class_name)(context, **params)
+        return action_controller_instance
 
     def _feature_builder(self, features_config, context):
         """метод собирает конкретную фичу"""
