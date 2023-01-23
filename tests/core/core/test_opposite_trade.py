@@ -71,7 +71,7 @@ class TickerBasicTestCase(unittest.TestCase):
         # print(observation)
 
         reward, action_result = self.core.apply_action(0)
-        rates_diff_mean = np.mean(self.core.action_controller.get_last_diffs())
+        rates_diff_mean = np.mean(self.core.action_controller._get_last_diffs())
         reward_exp = -rates_diff_mean / self.context.get("highest_bid") * self.ticker.reward_wait
 
         self.assertEqual(np.round(reward, 5), np.round(reward_exp, 5))

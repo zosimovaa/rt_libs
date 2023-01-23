@@ -53,7 +53,7 @@ class Ticker_:
             reward = self._get_penalty()
             action_result = BadAction(self.context)
         else:
-            last_data_points_diff = self.context.data_point.get_last_diffs(self.NUM_MEAN_OBS)
+            last_data_points_diff = self.context.data_point._get_last_diffs(self.NUM_MEAN_OBS)
             rates_diff_mean = np.mean(last_data_points_diff)
             reward = -rates_diff_mean / self.context.get("highest_bid") * self.REWARD_SCALE_WAIT
             action_result = None
@@ -81,7 +81,7 @@ class Ticker_:
 
     def _action_hold(self, ts, is_open):
         if is_open:
-            last_data_points_diff = self.context.data_point.get_last_diffs(self.NUM_MEAN_OBS)
+            last_data_points_diff = self.context.data_point._get_last_diffs(self.NUM_MEAN_OBS)
             rates_diff_mean = np.mean(last_data_points_diff)
             reward = rates_diff_mean / self.context.get("highest_bid") * self.REWARD_SCALE_WAIT
             action_result = None
