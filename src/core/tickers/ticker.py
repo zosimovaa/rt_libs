@@ -2,17 +2,16 @@ import logging
 import numpy as np
 
 from ..actions import BadAction, TradeAction
-
+from ..observation_builder.features import ProfitFeature
 
 logger = logging.getLogger(__name__)
 
 
 class TickerBasic:
     """Класс реализует логику расчета награды/штрафа за действия.
-    Базовая версия - награда из профита выдается только при открытии и закрытии. В ожидании будет награда только в виде
-    штрафа за неправильные действия.
+    Базовая версия - награда из профита выдается только при закрытии.
+    В WAIT, OPEN, HOLD - будет награда только в виде штрафа за неправильные действия.
     """
-
     handler = {
         0: "_action_wait",
         1: "_action_open",
@@ -68,8 +67,7 @@ class TickerBasic:
             self.context.set_trade(self.trade)
             action_result = self.trade
 
-            profit = self.trade.get_profit()
-            reward = profit * self.scale_open
+            reward = self.reward * self.scale_open
         return reward, action_result
 
     def _action_hold(self, ts, is_open):
@@ -101,7 +99,7 @@ class TickerBasic:
         return result
 
 
-class TickerExtendedReward(TickerBasic):
+class TickerWaitHoldDiff(TickerBasic):
     """Класс реализует логику расчета награды/штрафа за действия и профита за торговые операции"
     Помимо награзы в виде профита за открытие/закрытие добавляется награда в ожидании в виде изменения курса.
     """
@@ -139,13 +137,37 @@ class TickerExtendedReward(TickerBasic):
         return reward, action_result
 
 
-class TickerExtendedReward2(TickerExtendedReward):
+class TickerWaitDiffHoldProfit(TickerWaitHoldDiff):
     """На холде будет строить награду из профита"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _action_hold(self, ts, is_open):
         if is_open:
             profit = self.context.get("profit", domain="Trade")
             reward = profit * self.scale_hold
+            action_result = None
+        else:
+            reward = self._get_penalty()
+            action_result = BadAction(self.context)
+        return reward, action_result
+
+
+class TickerWaitDiffHoldProfitSumNotTested(TickerWaitHoldDiff):
+    """На холде будет строить награду из профита"""
+
+    def __init__(self, *args,  num_mean_profit=5, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.profitFeature = ProfitFeature(self.context, scale_factor=1)
+
+    def _action_hold(self, ts, is_open):
+        if is_open:
+            profit = self.profitFeature.get().ravel()
+            profit_diff = np.diff(profit.ravel()[-num_mean_profit:])
+            profit_diff_sum = np.sum(profit_diff)
+
+            reward = profit_diff_sum * self.scale_hold
             action_result = None
         else:
             reward = self._get_penalty()
