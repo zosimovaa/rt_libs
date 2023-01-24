@@ -4,12 +4,14 @@
 import logging
 
 from ..actions import BadAction, AbstractTradeAction
+from .action_controller_interface import ActionControllerInterface
+from ..actions import BadAction, TradeAction, OppositeTradeAction
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractTickerBasic:
+class AbstractTickerBasic(ActionControllerInterface):
     """
     Класс реализует логику расчета награды для сценариев обучения корректной последовательности и
     реакции на сигнал продажи.
