@@ -3,7 +3,6 @@ from core import  context
 
 
 from core import context
-from core import tickers
 from core import action_controller
 from core import observation_builder
 from core.observation_builder import features

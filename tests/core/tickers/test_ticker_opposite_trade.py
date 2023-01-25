@@ -11,7 +11,6 @@ from tests.test_dataset import TestDatasetGenerator
 from src.data_point import DataPointFactory
 from src.core.context import BasicContext
 from src.core.actions import TradeAction, BadAction, OppositeTradeAction
-from src.core.tickers import TickerOppositeTradesReward
 
 
 class TickerBasicTestCase(unittest.TestCase):
@@ -40,7 +39,6 @@ class TickerBasicTestCase(unittest.TestCase):
 
         self.reward = 0
         self.penalty = -2
-
 
     def test_closed(self):
         # ==== Step 1 - подготовка тикера ====
