@@ -8,7 +8,7 @@ Trading operation - transmitted at the opening and closing.
 import logging
 
 from ..metrics import MetricCollector
-from .core_error import RTCoreError
+from core.facade.core_error import RTCoreError
 
 from basic_application import with_exception
 

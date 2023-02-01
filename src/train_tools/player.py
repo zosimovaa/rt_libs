@@ -24,6 +24,8 @@ class Player:
         self.dpi = None
         self.font_size = None
 
+        self.play_log = []
+
     def play(self, fig_size_x=13, fig_size_y=5, dpi=50, font_size=20, render=True, close_last=True):
         self.fig_size_x = fig_size_x
         self.fig_size_y = fig_size_y
@@ -32,12 +34,14 @@ class Player:
 
         self.trade_actions_history = []
         self.bad_actions_history = []
+        self.play_log = []
 
         done = False
         data_point = self.dataset_handler.reset()
         self.core.reset(data_point=data_point)
         observation = self.core.get_observation(data_point)
 
+        step = 1
         while not done:
             obs_transformed = [tf.expand_dims(tf.convert_to_tensor(obs), 0) for obs in observation]
             action = self.model(obs_transformed)
@@ -53,6 +57,16 @@ class Player:
 
             data_point, done = self.dataset_handler.get_next_step()
             observation = self.core.get_observation(data_point)
+            step_log = {
+                "step": step,
+                "observation": obs_transformed,
+                "action": action,
+                "reward": reward,
+                "action_result": action_result
+            }
+
+            self.play_log.append(step_log)
+            step = step + 1
 
         # Close last trade
         if close_last and len(self.trade_actions_history):
@@ -63,7 +77,7 @@ class Player:
             self.render_plot()
 
         metrics = self.core.get_metrics()
-        return metrics
+        return metrics, self.play_log
 
     def render_plot(self):
         self.fig, self.ax = plt.subplots(figsize=(self.fig_size_x, self.fig_size_y), dpi=self.dpi, constrained_layout=True)

@@ -30,7 +30,7 @@ class AgentTrainWrapper:
             model.compile()
 
             player = Player(self.env_core_test, model, self.dpf_test)
-            model_score_test = player.play(render=False)
+            model_score_test, play_log = player.play(render=False)
             model_score_train = self.agent.env.core.get_metrics()
 
             step_result = {

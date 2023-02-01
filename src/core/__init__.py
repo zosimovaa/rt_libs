@@ -10,7 +10,6 @@ This component implements the logic of the exchange
 from .actions import BadAction, TradeAction
 
 from .facade import RTCore
-from .facade import RTCoreError
 
-from .constructor import ConstructorGen1
+from core.constructor import ConstructorGen1
 

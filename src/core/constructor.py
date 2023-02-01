@@ -1,6 +1,4 @@
 from core.facade import RTCore
-from core import  context
-
 
 from core import context
 from core import action_controller

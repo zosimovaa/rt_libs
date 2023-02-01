@@ -7,4 +7,4 @@ from .plot_and_go import plot_and_go
 
 from .agent_train_wrapper import AgentTrainWrapper
 
-from .model_saver import ModelSaver
+from .progress_keeper import ProgressKeeper

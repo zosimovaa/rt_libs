@@ -117,3 +117,31 @@ class ActionControllerDiffReward(ActionControllerInterface):
         values_rel = values_diff / value
         result = values_rel[-self.num_mean_obs:]
         return np.mean(result)
+
+
+def only_negative_reward(func):
+    def wrapper(*args, **kwargs):
+        reward, action_result = func(*args, **kwargs)
+        penalty = min(0, reward)
+        return penalty, action_result
+    return wrapper
+
+
+class ActionControllerFixedWaitPenalty(ActionControllerDiffReward):
+    def _action_wait(self, ts, is_open):
+        if is_open:
+            reward = self._get_penalty()
+            action_result = BadAction(self.context)
+        else:
+            reward = self._get_penalty() * self.scale_wait
+            action_result = None
+        return reward, action_result
+
+    def _action_hold(self, ts, is_open):
+        if is_open:
+            reward = self._get_penalty() * self.scale_hold
+            action_result = None
+        else:
+            reward = self._get_penalty()
+            action_result = BadAction(self.context)
+        return reward, action_result
