@@ -1,3 +1,9 @@
+"""
+Рефакторинг DataPointFactory
+Цель - запилить фабрику, работающую с любым шагом датасета
+
+"""
+
 from .data_point import DataPoint
 import numpy as np
 import logging
@@ -11,68 +17,63 @@ class DataPointFactoryError(Exception):
 
 
 class DataPointFactory:
-    def __init__(self, dataset, period=300, n_observation_points=10, n_history_points=0, n_future_points=0, step_size=None):
-        self.period = period
-        self.n_observation_points = n_observation_points
-        self.n_history_points = n_history_points
-        self.n_future_points = n_future_points
-        self.n_points = n_observation_points + n_history_points + n_future_points
-        if step_size is not None:
-            self.step_size = step_size
-        else:
-            self.step_size = period
-
+    def __init__(self, dataset, step_size=1, offset=10, observation_len=10, future_points=0):
+        """
+        Все параметры указываются в единицах, без привязки к шагу датасета
+        :param dataset: pandas dataframe с данными
+        :param step_size: шаг по датасету. Указывается в единицах
+        :param offest: 'хвост' с историческими данными - количество точек, которые надо захватить.
+        Рассчитывается как произведение n_observation на max scale_factor
+        :param observation_len: количество точек в наблюдении
+        :param future_points: количество точек в будущем
+        """
         self.dataset = dataset
-        self.cursor = None
-        self.max_step = None
+        self.offset = offset
+        self.step_size = step_size
+        self.observation_len = observation_len
+        self.future_points = future_points
 
+        # self.period = self.dataset.index[1] - self.dataset.index[0]
+        self.max_cursor = self.dataset.shape[0] - self.future_points
+        self.max_steps = self.max_cursor - self.offset - 1
+        self.cursor = self.offset
         self.done = True
 
         self.reset()
 
-    @with_exception(DataPointFactoryError)
-    def reset(self, dataset=None):
-        if dataset is not None:
-            self.dataset = dataset
-
-        self.max_step = max(self.dataset.index)
+    def reset(self):
+        """Сброс в начальное состояние"""
         self.done = False
 
         # Курсор устанавливается на значение, которое отстоит от начала так, чтобы от начала
         # до курсора был размер данных для одного датапоинта.
-        self.cursor = min(self.dataset.index) + self.period * (self.n_points - 1)
-
+        self.cursor = self.offset  # min(self.dataset.index) + self.period * (self.offset - 1)
         data_point = self.get_current_step()
         return data_point
 
-    def get_idx(self):
-        up_bound = min(self.cursor + self.period, self.dataset.index.max() + self.period)
-        low_bound = up_bound - self.n_points * self.period
-        idxs = np.arange(low_bound, up_bound, self.period)
-        return idxs
-
-    @with_exception(DataPointFactoryError)
     def get_current_step(self):
-        idxs = self.get_idx()
-        data = self.dataset.loc[idxs, :]
+        """ Возвращает текущий data_point"""
+        data = self.dataset.iloc[self.cursor - self.offset : self.cursor + self.future_points, : ]
 
         data_point = DataPoint(
             data,
-            n_observation_points=self.n_observation_points,
-            n_future_points=self.n_future_points,
-            period=self.period
+            future_points=self.future_points,
+            observation_len=self.observation_len
         )
         return data_point
 
-    @with_exception(DataPointFactoryError)
     def get_next_step(self):
+        """Переводит курсор на величину шага и возвращает data_point"""
         if not self.done:
             self.cursor = self.cursor + self.step_size
 
-        if self.cursor >= self.max_step:
+        if self.cursor >= self.max_cursor:
             self.done = True
         else:
             self.done = False
 
         data_point = self.get_current_step()
         return data_point, self.done
+
+    def get_max_steps(self):
+        return self.max_steps

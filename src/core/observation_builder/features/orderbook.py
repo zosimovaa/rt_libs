@@ -17,13 +17,11 @@ class OrderbookDiffFeature2D(AbstractFeature):
 
     def _get(self):
         data_point = self.context.data_point
-        obs_len = data_point.obs_len
-
         result = []
 
         for level in self.levels:
-            asks = data_point.get_values("asks_" + str(level), num=obs_len)
-            bids = data_point.get_values("bids_" + str(level), num=obs_len)
+            asks = data_point.get_values("asks_" + str(level))
+            bids = data_point.get_values("bids_" + str(level))
 
             feature = bids - asks
             feature = feature / np.abs(feature).mean()

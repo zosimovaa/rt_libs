@@ -113,7 +113,7 @@ class ActionControllerDiffReward(ActionControllerInterface):
     def _get_diff_reward(self, name='highest_bid'):
         data_point = self.context.data_point
         values_diff = np.diff(data_point.get_values(name))
-        value = data_point.get_value(name)
+        value = data_point.get_value(name)[0]
         values_rel = values_diff / value
         result = values_rel[-self.num_mean_obs:]
         return np.mean(result)

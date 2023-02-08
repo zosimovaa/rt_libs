@@ -32,7 +32,7 @@ class DataPointFactoryTestCase(unittest.TestCase):
         dataset = self.make_dataset(num=100, step=step_size, ts_start=1000)
         dpf = DataPointFactory(dataset, period=period, n_observation_points=5, n_future_points=3, step_size=step_size)
 
-        self.assertEqual(max(dataset.index), dpf.max_step)
+        self.assertEqual(max(dataset.index), dpf.max_cursor)
 
     def test_step_with_fp(self):
         step_size = 60

@@ -241,7 +241,7 @@ class DQN:
         message = template.format(
             tm_now,
             int(tm_end - tm_start),
-            self.running_reward,
+            np.mean(self.episode_reward_history),
             self.episode_count,
             self.frame_count,
             self.epsilon,

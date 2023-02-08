@@ -55,8 +55,8 @@ class BasicContext:
         self.data_point = data_point
         # update price params in context
         self.set("ts", data_point.get_current_index())
-        self.set("lowest_ask", data_point.get_value("lowest_ask"))
-        self.set("highest_bid", data_point.get_value("highest_bid"))
+        self.set("lowest_ask", data_point.get_value("lowest_ask")[0])
+        self.set("highest_bid", data_point.get_value("highest_bid")[0])
         # update trade status if exists
         self.update_trade()
 

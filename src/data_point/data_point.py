@@ -1,3 +1,4 @@
+
 """
 Класс DataPoint реализован, чтобы передать текущее представление точки данных в z_core.
 
@@ -24,59 +25,73 @@ class DataPointError(Exception):
 
 
 class DataPoint:
-    def __init__(self, data, n_observation_points=10, n_future_points=0, period=1):
+    def __init__(self, data, future_points=0, observation_len=5):
         self.data = data
-
-        self.fut_len = n_future_points
-        self.obs_len = n_observation_points
-        self.hist_len = len(self.data) - n_future_points - n_observation_points
+        self.offset = future_points
+        self.observation_len = observation_len
 
         # Верхушка observation = текущая точка данных
-        self.current_idx = self.data.index[-(self.fut_len + 1)]
+        self.cursor = data.shape[0] - self.offset - 1
+        self.current_idx = data.index.values[self.cursor]
 
-        # Начало observation
-        self.start_idx = self.data.index[self.hist_len]
+        self.period = data.index[1] - data.index[0]
 
-        self.period = period  # self.data.index[1] - self.data.index[0]
-
-    def _get_slice(self, num):
-        if num >= 0:
-            end_idx = self.data.shape[0] - self.fut_len
-            start_idx = self.data.shape[0] - num - self.fut_len
-        else:
-            end_idx = self.data.shape[0] - self.fut_len - num
-            start_idx = self.data.shape[0] - self.fut_len
-        return start_idx, end_idx
-
-    def get_values(self, name, num=None):
+    def get_points(self, step_factor=1, num=None):
+        """Возвращает индексы по реперным точкам - т.е. будет соответствовать количеству запрошенных точек"""
         if num is None:
-            num = self.obs_len
-        start_idx, end_idx = self._get_slice(num)
-        result = self.data.loc[:, name].values[start_idx : end_idx]
+            num = self.observation_len
+
+        if num >= 0:
+            up_bound = self.cursor + 1
+            low_bound = up_bound - (num - 1) * step_factor - 1
+        else:
+            low_bound = self.cursor + step_factor
+            up_bound = low_bound - num * step_factor
+
+        idxs = self.data.index.values[low_bound: up_bound: step_factor]
+        return idxs
+
+    def get_indexes(self, step_factor=1, num=None):
+        """Возвращает все индексы, в том числе расположенные между реперными точками"""
+        if num is None:
+            num = self.observation_len
+
+        if num >= 0:
+            up_bound = self.cursor + 1
+            low_bound = up_bound - num * step_factor
+
+        else:
+            low_bound = self.cursor + 1
+            up_bound = low_bound - num * step_factor
+
+        # idxs = self.data.index.values[low_bound : up_bound : 1]
+        # return idxs
+        return low_bound, up_bound
+
+    def get_values(self, name, step_factor=1, num=None):
+        if num is None:
+            num = self.observation_len
+
+        low_bound, up_bound = self.get_indexes(step_factor=step_factor, num=num)
+        col = self.data.loc[:, name].values
+        result = col[low_bound: up_bound]
+
         return result
 
-    def get_value(self, name, cursor=None):
-        idx = self.get_indexes(cursor=cursor, num=1)
-        result = self.data.at[idx[0], name]
+    def get_value(self, name, step_factor=1, idx=None):
+        """Метод возвращает одно значение. По умолчанию для текущего индекса.
+        Индекс можно задать из вне. Данные возвращаются с учетом scale_factor
+        Расчет по одной точке (_build_point в AbstractFeatureWithHistory) для scalefactor>1 будет неточным -
+        там надо считать все сразу. Надо исследовать, сходу сложно оценить.
+        """
+        if idx is None:
+            idx = self.current_idx
+
+        cursor = np.where(self.data.index.values == idx)[0][0]
+        col = self.data.loc[:, name].values
+
+        result = col[cursor - step_factor + 1: cursor + 1]
         return result
 
     def get_current_index(self):
         return self.current_idx
-
-    def get_indexes(self, cursor=None, num=None):
-        if cursor is None:
-            cursor = self.current_idx
-
-        if num is None:
-            num = self.obs_len
-
-        period = self.period
-
-        if num > 0:
-            stop = cursor - (period * (num - 1))
-            idxs = np.arange(stop, cursor + period, period)
-        else:
-            stop = cursor - (period * (num - 1))
-            idxs = np.arange(cursor + period, stop, period)
-
-        return idxs

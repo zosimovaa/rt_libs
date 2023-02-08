@@ -29,8 +29,9 @@ class ProgressKeeper:
     MODEL_DIR = "model"
     MODEL_TARGET_DIR = "model_target"
 
-    def __init__(self, alias, models_path="./trader_models/", ):
+    def __init__(self, alias, models_path="./trader_models/", snapshot_path="./snapshots/"):
         self.models_path = models_path
+        self.snapshot_path = snapshot_path
         self.alias = alias
         self.full_path = os.path.join(self.models_path, alias)
 
@@ -83,10 +84,9 @@ class ProgressKeeper:
 
         return res
 
-    def make_snapshot(self, agent, results, name="snapshot"):
+    def make_snapshot(self, agent, results, name="default"):
         """Создет новый снепшот обучения"""
-        snapshot_path = os.path.join(self.full_path, name)
-
+        snapshot_path = os.path.join(self.snapshot_path, self.alias, name)
 
         self._check_dir(snapshot_path)
         self.save_model("model", agent.model, path=snapshot_path)
@@ -98,9 +98,9 @@ class ProgressKeeper:
         results_state = self._prep_results(results)
         self.save_object("results_state.pkl", results_state, path=snapshot_path)
 
-    def load_snapshot(self, agent, name="snapshot"):
+    def load_snapshot(self, agent, name="default"):
         """Загружает последний снепшот обучения. Пока все складываем в одну директорию, """
-        snapshot_path = os.path.join(self.full_path, name)
+        snapshot_path = os.path.join(self.snapshot_path, self.alias, name)
         try:
             model = self.load_model("model", path=snapshot_path)
             model_target = self.load_model("model_target", path=snapshot_path)
