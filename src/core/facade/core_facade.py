@@ -25,14 +25,14 @@ class RTCore:
         self.metric_collector = MetricCollector()
         logger.debug("Instance initialized")
 
-    @with_exception(RTCoreError)
+    #@with_exception(RTCoreError)
     def get_action_space(self):
         # todo implement method in the action_controller
         action_space = len(self.action_controller.handler)
         logger.debug("Action space: %s", action_space)
         return action_space
 
-    @with_exception(RTCoreError)
+    #@with_exception(RTCoreError)
     def reset(self, data_point=None):
         self.metric_collector.reset()
         self.context.reset()
@@ -40,14 +40,14 @@ class RTCore:
         self.observation_builder.reset()
         self.action_controller.reset()
 
-    @with_exception(RTCoreError)
+    #@with_exception(RTCoreError)
     def get_observation(self, data_point):
         self.context.update_datapoint(data_point)
         observation = self.observation_builder.get()
         self.context.set("observation", observation, domain="Data")
         return observation
 
-    @with_exception(RTCoreError)
+    #@with_exception(RTCoreError)
     def apply_action(self, action):
         self.context.set("action", action, domain="Action")
         reward, action_result = self.action_controller.apply_action(action)
@@ -56,6 +56,6 @@ class RTCore:
             self.metric_collector.process(reward, action_result)
         return reward, action_result
 
-    @with_exception(RTCoreError)
+    #@with_exception(RTCoreError)
     def get_metrics(self):
         return self.metric_collector.get_metrics()

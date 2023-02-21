@@ -13,7 +13,7 @@ class ActionControllerDiffReward(ActionControllerInterface):
 
     OPEN - без награды (награда (профит) от OppositeTrade явно не улучшает ситуацию, надо исследовать)
     CLOSE - награда в виде профита
-    В WAIT, HOLD - награда в виде изменения курса в пароцентах.
+    В WAIT, HOLD - награда в виде изменения курса в процентах.
     Все веса регулируются коэффициентами, что позволяет какие-то факторы убирать в ноль или усиливать
     """
     handler = {
@@ -61,7 +61,10 @@ class ActionControllerDiffReward(ActionControllerInterface):
             reward = self._get_penalty()
             action_result = BadAction(self.context)
         else:
-            reward = -self._get_diff_reward() * self.scale_wait
+            if self.scale_wait>0:
+                reward = -self._get_diff_reward() * self.scale_wait
+            else:
+                reward = 0
             action_result = None
         return reward, action_result
 
@@ -83,7 +86,10 @@ class ActionControllerDiffReward(ActionControllerInterface):
 
     def _action_hold(self, ts, is_open):
         if is_open:
-            reward = self._get_diff_reward() * self.scale_hold
+            if self.scale_wait > 0:
+                reward = self._get_diff_reward() * self.scale_hold
+            else:
+                reward = 0
             action_result = None
         else:
             reward = self._get_penalty()
@@ -113,10 +119,10 @@ class ActionControllerDiffReward(ActionControllerInterface):
     def _get_diff_reward(self, name='highest_bid'):
         data_point = self.context.data_point
         values_diff = np.diff(data_point.get_values(name))
-        value = data_point.get_value(name)[0]
-        values_rel = values_diff / value
-        result = values_rel[-self.num_mean_obs:]
-        return np.mean(result)
+        value_norm = data_point.get_value(name)[0]
+        values_rel = values_diff / value_norm
+        result = np.mean(values_rel[-self.num_mean_obs:])
+        return result
 
 
 def only_negative_reward(func):

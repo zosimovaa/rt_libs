@@ -4,7 +4,6 @@ import logging
 import numpy as np
 import tensorflow as tf
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -12,19 +11,23 @@ class DQN:
     def __init__(self, env, model, model_target, dqn_params):
         self.env = env
 
+        self.num_actions = env.action_space
+
+
         self.model = model
         self.model_target = model_target
         
         # Configuration parameters for the whole setup
-        self.gamma = dqn_params["gamma"]                                    # Discount factor for past rewards
-        self.epsilon = dqn_params["epsilon"]                                # Epsilon greedy parameter
-        self.epsilon_min = dqn_params["epsilon_min"]                        # Minimum epsilon greedy parameter
-        self.epsilon_max = dqn_params["epsilon_max"]                        # Maximum epsilon greedy parameter
-        self.epsilon_interval = (self.epsilon_max - self.epsilon_min)       # Rate at which to reduce chance of random action being taken
-        self.batch_size = dqn_params["batch_size"]                          # Size of batch taken from replay buffer
-        self.max_steps_per_episode = dqn_params["max_steps_per_episode"]
+        self.gamma = 0.95                                 # Discount factor for past rewards
 
-        self.num_actions = env.action_space
+        self.epsilon = 1                            # Epsilon greedy parameter
+        self.epsilon_min = 0.01                     # Minimum epsilon greedy parameter
+        self.epsilon_max = 1                        # Maximum epsilon greedy parameter
+        self.epsilon_interval = (self.epsilon_max - self.epsilon_min)   # Rate at which to reduce chance of random action being taken
+
+        self.batch_size = 32                          # Size of batch taken from replay buffer
+        self.max_steps_per_episode = 10000
+
         
         # Experience replay buffers
         self.action_history = []
@@ -34,6 +37,7 @@ class DQN:
         self.done_history = []
         self.episode_reward_history = []
         self.loss_history = []
+
 
         self.running_reward = 0
         self.episode_count = 0
@@ -48,7 +52,12 @@ class DQN:
         self.update_target_network = dqn_params["update_target_network"]    # How often to update the target network
         self.loss_function = dqn_params["loss_function"]                    # Using huber loss for stability
 
-        self.halt = False
+
+    def get_config(self):
+        return None
+
+    def set_config(self, config):
+        return None
 
     def set_min_eps(self, eps):
         self.epsilon_min = max(0, eps)
@@ -93,13 +102,16 @@ class DQN:
     def reset(self):
         pass
     
-    def train(self, goal_reward=None, max_frames=None):
+    def train(self, goal_reward=None, max_frames=None, max_episodes=None):
         self.halt = False
         tm_start = time.time()
         
         while True:  # Run until solved or reach max_frames
-            state = np.array(self.env.reset(), dtype=object)
+            self.episode_count += 1
             episode_reward = 0
+
+            state = np.array(self.env.reset(), dtype=object)
+
 
             # env work cycle start
             for time_step in range(1, self.max_steps_per_episode):
@@ -219,25 +231,29 @@ class DQN:
                 del self.episode_reward_history[:1]
             self.running_reward = np.mean(self.episode_reward_history)
 
+            # Stop criteria
             if goal_reward is not None and self.running_reward >= goal_reward:  # Condition to consider the task solved
-                logger.critical("Solved at episode {}!".format(self.episode_count))
+                #logger.critical("Solved at episode %s!", self.episode_count)
                 break
 
             if max_frames is not None and self.frame_count >= max_frames:
-                logger.critical("Frame {} was reached!".format(self.frame_count))
+                #logger.critical("Frame %s was reached!", self.frame_count)
+                break
+
+            if max_episodes is not None and self.episode_count >= max_episodes:
+                #logger.critical("Episode %s was reached!", self.episode_count)
                 break
 
             if self.halt:
-                logger.critical("The training process is stopped".format(self.frame_count))
+                logger.critical("The training process is stopped at %s frame", self.frame_count)
                 break
-
-            self.episode_count += 1
 
     def log(self, tm_start):
         tm_end = time.time()
         tm_now = datetime.now().strftime("%H:%M:%S")
 
-        template = "{0} ({1:>3} sec) | reward: {2:>5.2f} at episode {3}, frame count {4}, epsilon: {5:.2f}, loss:{6:.2f}"
+        template = "{0} ({1:>3} sec) | reward: {2:>5.2f} at episode {3}, frame count {4}," \
+                   " epsilon: {5:.2f}, loss:{6:.2f}"
         message = template.format(
             tm_now,
             int(tm_end - tm_start),
@@ -249,5 +265,28 @@ class DQN:
         )
         logger.warning(message)
 
-    def stop(self):
-        self.halt = True
+    def save_config(self):
+        config = {}
+        config["model"] = self.epsilmodelon
+        config["model_target"] = self.model_target
+        config["epsilon"] = self.epsilon
+        config["action_history"] = self.action_history
+        config["state_history"] = self.state_history
+        config["state_next_history"] = self.state_next_history
+        config["rewards_history"] = self.rewards_history
+        config["done_history"] = self.done_history
+        config["episode_reward_history"] = self.episode_reward_history
+        config["loss_history"] = self.loss_history
+        config["running_reward"] = self.running_reward
+        config["episode_count"] = self.episode_count
+        config["frame_count"] = self.frame_count
+        return config
+
+    def load_config(self, config):
+        keys = config.keys()
+        for key in keys:
+            try:
+                setattr(self, key, config[key])
+            except Exception as err:
+                print(f"{key} not found in agent")
+

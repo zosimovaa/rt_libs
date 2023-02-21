@@ -11,7 +11,7 @@ np.random.seed(RANDOM_SEED)
 tf.random.set_seed(RANDOM_SEED)
 tf.get_logger().setLevel('ERROR')
 
-class REINFORCE:
+class PGAgent:
     def __init__(self, env, model, params, path=None):
         self.env = env                              # import env
         self.model = model

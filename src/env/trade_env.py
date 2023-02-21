@@ -17,7 +17,7 @@ class TradeEnv(gym.Env):
         self.log = log
         self.log_obs = log_obs
 
-        self.live_train_plot = train_plot.LiveTrainPlot(self.alias)
+        #self.live_train_plot = train_plot.LiveTrainPlot(self.alias)
 
         self.episode = -1
         self.step_info = dict()
@@ -51,7 +51,7 @@ class TradeEnv(gym.Env):
         self.step_num = 0
         metrics = self.core.get_metrics()
         #self.log_episode_result(metrics)
-        self.live_train_plot.update_plot(metrics)
+        #self.live_train_plot.update_plot(metrics)
 
         # Сброс датасета и подготовка наблюдения
         self.episode += 1

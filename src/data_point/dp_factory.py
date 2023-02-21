@@ -35,7 +35,7 @@ class DataPointFactory:
 
         # self.period = self.dataset.index[1] - self.dataset.index[0]
         self.max_cursor = self.dataset.shape[0] - self.future_points
-        self.max_steps = self.max_cursor - self.offset - 1
+        self.max_steps = self.max_cursor - self.offset
         self.cursor = self.offset
         self.done = True
 

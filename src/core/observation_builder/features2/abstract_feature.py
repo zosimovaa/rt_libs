@@ -32,10 +32,7 @@ class AbstractFeature(metaclass=abc.ABCMeta):
 
     def reset(self) -> None:
         """Reset to initial state. Relevant for the heirs of AbstractFeatureWithHistory"""
-        if self.scale_is_broken:
-            #logger.warning("{0}: Scale is broken".format(self.__class__.__name__))
-            self.scale_is_broken = False
-        pass
+        self.scale_is_broken = False
 
     @abc.abstractmethod
     def _get(self) -> np.ndarray:
