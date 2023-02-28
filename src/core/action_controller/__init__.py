@@ -1,4 +1,4 @@
 from .action_controller_interface import ActionControllerInterface
 from .trade_controller import ActionControllerDiffReward
 from .abstract_controller import AbstractTickerBasic, AbstractTickerOpenSignal, AbstractTickerCompleteTrade
-from .trade_controller import ActionControllerFixedWaitPenalty
+from .trade_controller import ActionControllerProfitReward

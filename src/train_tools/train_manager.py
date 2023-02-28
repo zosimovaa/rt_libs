@@ -8,16 +8,17 @@ from .player import Player
 
 
 class TrainManager:
+    """Позволяет итеративно запускать тренировку агента, контроллирует критерии остановки и организует проверку модели на тестовых данных"""
     SNAPSHOT_PATH = './train_snapshots/'
 
-    def __init__(self, core, dpf, train_plot, alias="test"):
+    def __init__(self, core, dpf, train_plot=None, alias="test"):
         self.core = core
         self.dpf = dpf
         self.history = []
         self.train_plot = train_plot
         self.alias = alias
 
-    def go(self, agent, max_episodes=3, test_every=2):
+    def go(self, agent, max_episodes=None, test_every=2):
 
         current_episode = agent.episode_count
         test_episodes = list(range(current_episode + 1, max(max_episodes + 1, current_episode + 1)))
@@ -44,7 +45,8 @@ class TrainManager:
                 step["model"] = model
 
             self.history.append(step)
-            self.train_plot.update_plot(self.history)
+            if self.train_plot is not None:
+                self.train_plot.update_plot(self.history)
 
     def get_top_models_idx(self, n=1):
         balances = []
@@ -120,3 +122,26 @@ class TrainManager:
         with open(obj_path, "rb") as stream:
             obj = pickle.load(stream)
         return obj
+
+    def get_train_stat(self, top_n=20):
+        idxs = []
+        for i in range(len(self.history)):
+            model = self.history[i].get("model")
+            if model is not None:
+                idxs.append(i)
+
+        scores = [self.history[idx]["test"]["Balance"] for idx in idxs]
+
+        top_scores = np.flip(np.argsort(scores))[:top_n]
+
+        for top_score_idx in top_scores:
+            idx = idxs[top_score_idx]
+
+            balance = self.history[idx]["test"]["Balance"]
+            penalties = self.history[idx]["test"]["Penalties"]
+            total_reward = self.history[idx]["test"]["TotalReward"]
+
+            print(
+                f"Profit: {balance:<6.2%} | id: {idx:<4} | Penalties: {penalties:<4} | TotalReward: {total_reward:<7.2f}")
+
+

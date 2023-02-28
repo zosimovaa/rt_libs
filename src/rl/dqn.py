@@ -1,292 +1,275 @@
 import time
-from datetime import datetime
+import copy
+import random
 import logging
+from datetime import datetime
+from collections import deque
 import numpy as np
 import tensorflow as tf
 
 logger = logging.getLogger(__name__)
 
 
-class DQN:
-    def __init__(self, env, model, model_target, dqn_params):
+class DQNAgent:
+    def __init__(self, env, model, model_target):
         self.env = env
-
-        self.num_actions = env.action_space
-
-
         self.model = model
         self.model_target = model_target
-        
-        # Configuration parameters for the whole setup
-        self.gamma = 0.95                                 # Discount factor for past rewards
 
-        self.epsilon = 1                            # Epsilon greedy parameter
-        self.epsilon_min = 0.01                     # Minimum epsilon greedy parameter
-        self.epsilon_max = 1                        # Maximum epsilon greedy parameter
-        self.epsilon_interval = (self.epsilon_max - self.epsilon_min)   # Rate at which to reduce chance of random action being taken
+        self.state_size = env.observation_space
+        self.action_size = env.action_space
 
-        self.batch_size = 32                          # Size of batch taken from replay buffer
-        self.max_steps_per_episode = 10000
+        # decay or discount rate: enables agent to take into account future actions in addition to the immediate ones, but discounted at this rate
+        self.gamma = 0.99
 
-        
-        # Experience replay buffers
+        # Number of frames for exploration
+        self._epsilon_greedy_frames = 100000
+        self.epsilon_random_frames = 5000
+        self.max_memory_length = 100000
+
+        # Epsilon greedy parameter
+        self.epsilon = 1
+        self._epsilon_min = 0.01  # Minimum epsilon greedy parameter
+        self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
+
+        # # Experience replay params and buffers
+        self.batch_size = 32
+        self.update_after_actions = 4
+
+        # update every N episodes
+        self.update_target_network = 2
+
         self.action_history = []
         self.state_history = []
         self.state_next_history = []
         self.rewards_history = []
         self.done_history = []
-        self.episode_reward_history = []
-        self.loss_history = []
 
-
-        self.running_reward = 0
+        self.max_steps_per_episode = 10000
         self.episode_count = 0
+        self.episode_start = 0
+        self.episode_reward = 0
         self.frame_count = 0
-        
-        self.optimizer = dqn_params["optimizer"]
+        self.running_reward = 0
 
-        self.epsilon_random_frames = dqn_params["epsilon_random_frames"]    # Number of frames to take random action and observe output
-        self.epsilon_greedy_frames = dqn_params["epsilon_greedy_frames"]    # Number of frames for exploration
-        self.max_memory_length = dqn_params["max_memory_length"]            # Maximum replay length # Note: The Deepmind paper suggests 1000000 however this causes memory issues
-        self.update_after_actions = dqn_params["update_after_actions"]      # Train the model after 4 actions
-        self.update_target_network = dqn_params["update_target_network"]    # How often to update the target network
-        self.loss_function = dqn_params["loss_function"]                    # Using huber loss for stability
+        self.max_reward_length = 30
+        self.episode_reward_history = deque(maxlen=self.max_reward_length)
+        self.episode_loss_history = deque(maxlen=self.max_reward_length)
 
+        # self.learning_rate = 0.00012  # rate at which NN adjusts models parameters via SGD to reduce cost
+        self.loss_function = None
+        self.optimizer = None
+
+        np.random.seed(0)
+
+    @property
+    def epsilon_greedy_frames(self):
+        return self._epsilon_greedy_frames
+
+    @epsilon_greedy_frames.setter
+    def epsilon_greedy_frames(self, value):
+        self._epsilon_greedy_frames = value
+        self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
+
+    @property
+    def epsilon_min(self):
+        return self._epsilon_min
+
+    @epsilon_min.setter
+    def epsilon_min(self, value):
+        self._epsilon_min = value
+        self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
 
     def get_config(self):
-        return None
+        config = copy.deepcopy(self.__dict__)
+        del config["optimizer"]
+        return config
 
-    def set_config(self, config):
-        return None
-
-    def set_min_eps(self, eps):
-        self.epsilon_min = max(0, eps)
-        self.epsilon_interval = (self.epsilon_max - self.epsilon_min)
-        self.epsilon = max(self.epsilon, self.epsilon_min)
+    def load_config(self, config):
+        keys = config.keys()
+        for key in keys:
+            if hasattr(self, key):
+                setattr(self, key, config[key])
+            else:
+                print(f"Key {key} not found in agent")
 
     def _sample_transformer(self, state):
+        return list(map(lambda p: np.expand_dims(p, 0), state))
+
+    def _batch_transformer(self, batch):
+        return list(map(np.array, zip(*batch)))
+
+    def _sample_transformer1(self, state):
         """
         :param state: текущий стейт может быть np.ndarray или list. Если list - значит работаем с multiple input
         :return: state расширенной размерности
         """
         new_state = []
         if isinstance(self.env.observation_space, list):
-            #multiple input
+            # multiple input
             for st in state:
                 st_tensor = tf.convert_to_tensor(st)
                 st_tensor = tf.expand_dims(st_tensor, 0)
                 new_state.append(st_tensor)
         else:
-            #single input
+            # single input
             new_state = tf.convert_to_tensor(state)
             new_state = tf.expand_dims(new_state, 0)
         return new_state
 
-    def _batch_transformer(self, samples):
+    def _batch_transformer1(self, samples):
         """Текущий стейт может быть np.ndarray или list. Если list - значит работаем с multiple input"""
         n = len(samples)
         output = []
         if isinstance(self.env.observation_space, list):
-            #multiple input
+            # multiple input
             for i in range(len(samples[0])):
                 shape = np.array(samples)[:, i][0].shape
                 sample = np.vstack(np.array(samples)[:, i]).reshape(n, *shape)
                 output.append(sample)
-        else: 
-            #single input
+        else:
+            # single input
             shape = np.array(samples)[0].shape
             new_shape = [n, *shape]
             output = np.array(samples).reshape(new_shape)
-        return output  
-        
+        return output
+
     def reset(self):
         pass
-    
+
+    def remember(self, state, action, reward, next_state, done):
+        # Save actions and states in replay buffer
+        self.state_history.append(state)
+        self.action_history.append(action)
+        self.rewards_history.append(reward)
+        self.state_next_history.append(next_state)
+        self.done_history.append(done)
+
+        if len(self.done_history) > self.max_memory_length:
+            del self.rewards_history[0]
+            del self.state_history[0]
+            del self.state_next_history[0]
+            del self.action_history[0]
+            del self.done_history[0]
+
+    def act(self, state):
+        # Use epsilon-greedy for exploration
+        if self.frame_count < self.epsilon_random_frames or self.epsilon > np.random.rand(1)[0]:
+            # Take random action
+            # action = np.random.choice(self.action_size)
+            action = random.sample(range(self.action_size), 1)[0]
+        else:
+            state_tensor = self._sample_transformer(state)
+            # Take best action
+            action_probs = self.model(state_tensor, training=False)
+            # action = tf.argmax(action_probs[0]).numpy()
+            action = np.argmax(action_probs[0])
+
+        # Decay probability of taking random action
+        if self.epsilon > self.epsilon_min:
+            self.epsilon -= self.epsilon_decay
+
+        return action
+
+    def replay(self):
+        # Get indices of samples for replay buffers
+        # indices = np.random.choice(range(len(self.done_history)), size=self.batch_size)
+        indices = random.sample(range(len(self.done_history)), self.batch_size)
+        state_sample = [self.state_history[i] for i in indices]
+        next_state_sample = [self.state_next_history[i] for i in indices]
+        rewards_sample = [self.rewards_history[i] for i in indices]
+        action_sample = [self.action_history[i] for i in indices]
+        done_sample = 1 * np.array([self.done_history[i] for i in indices])
+
+        state_sample = self._batch_transformer(state_sample)
+        next_state_sample = self._batch_transformer(next_state_sample)
+
+        # Build the updated Q-values for the sampled future states
+        # Use the target model for stability
+        future_rewards = self.model_target(next_state_sample)
+        # Q value = reward + discount factor * expected future reward
+        updated_q_values = rewards_sample + self.gamma * tf.reduce_max(future_rewards, axis=1)
+
+        # If final frame set the last value to -1
+        updated_q_values = updated_q_values * (1 - done_sample) - done_sample
+
+        # Create a mask so we only calculate loss on the updated Q-values
+        masks = tf.one_hot(action_sample, self.action_size)
+
+        with tf.GradientTape() as tape:
+            # Train the model on the states and updated Q-values
+            q_values = self.model(state_sample)
+            # Apply the masks to the Q-values to get the Q-value for action taken
+            q_action = tf.reduce_sum(tf.multiply(q_values, masks), axis=1)
+            # Calculate loss between new Q-value and old Q-value
+            loss = self.loss_function(updated_q_values, q_action)
+            self.episode_loss_history.append(loss)
+
+        # Backpropagation
+        grads = tape.gradient(loss, self.model.trainable_variables)
+        self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+
     def train(self, goal_reward=None, max_frames=None, max_episodes=None):
-        self.halt = False
-        tm_start = time.time()
-        
-        while True:  # Run until solved or reach max_frames
+        while True:
+            self.episode_start = time.time()
+            self.episode_loss_history = []
+            self.episode_reward = 0
             self.episode_count += 1
-            episode_reward = 0
 
-            state = np.array(self.env.reset(), dtype=object)
-
+            # reset state at start of each new episode of the game
+            state = self.env.reset()
 
             # env work cycle start
-            for time_step in range(1, self.max_steps_per_episode):
+            for frame in range(
+                    self.max_steps_per_episode):  # time represents a frame of the game; goal is to keep pole upright as long as possible up to range, e.g., 500 or 5000 timesteps
                 self.frame_count += 1
 
-                # Use epsilon-greedy for exploration
-                if self.frame_count < self.epsilon_random_frames or self.epsilon > np.random.rand(1)[0]:
-                    # Take random action
-                    action = np.random.choice(self.num_actions)
-                else:
-                    # Predict action Q-values
-                    # From environment state
-
-                    #!!! multiple state transformation
-                    #state_tensor = tf.convert_to_tensor(state)
-                    #state_tensor = tf.expand_dims(state_tensor, 0)
-                    state_tensor = self._sample_transformer(state)
-
-                    action_probs = self.model(state_tensor, training=False)
-                    # Take best action
-                    action = tf.argmax(action_probs[0]).numpy()
-
-                # Decay probability of taking random action
-                self.epsilon -= self.epsilon_interval / self.epsilon_greedy_frames
-                self.epsilon = max(self.epsilon, self.epsilon_min)
+                # env.render()
+                action = self.act(state)
 
                 # Apply the sampled action in our environment
-                state_next, reward, done, _ = self.env.step(action)
-                state_next = np.array(state_next)
-
-                #if self.frame_count % 500 == 0:
-                self.env.render() #; Adding this line would show the attempts
-                    # of the agent in a pop up window.
-
-                episode_reward += reward
+                next_state, reward, done, _ = self.env.step(action)
+                self.episode_reward += reward
 
                 # Save actions and states in replay buffer
-                self.action_history.append(action)
-                self.state_history.append(state)
-                self.state_next_history.append(state_next)
-                self.done_history.append(done)
-                self.rewards_history.append(reward)
-                state = state_next
+                self.remember(state, action, reward, next_state, done)
+                state = next_state
 
-                # Update every fourth frame and once batch size is over 32
-                if self.frame_count % self.update_after_actions == 0 and len(self.done_history) > self.batch_size:
-
-                    # Get indices of samples for replay buffers
-                    indices = np.random.choice(range(len(self.done_history)), size=self.batch_size)
-
-                    # Using list comprehension to sample from replay buffer
-                    #!!! multiple input state transformation
-                    state_sample = np.array([self.state_history[i] for i in indices])        
-                    state_sample = self._batch_transformer(state_sample)
-                    #!!! multiple input state transformation
-                    state_next_sample = np.array([self.state_next_history[i] for i in indices])
-                    state_next_sample = self._batch_transformer(state_next_sample)
-
-                    rewards_sample = [self.rewards_history[i] for i in indices]
-                    action_sample = [self.action_history[i] for i in indices]
-                    done_sample = tf.convert_to_tensor(
-                        [float(self.done_history[i]) for i in indices]
-                    )
-
-                    # Build the updated Q-values for the sampled future states
-                    # Use the target model for stability
-                    future_rewards = self.model_target(state_next_sample)
-                    # Q value = reward + discount factor * expected future reward
-                    updated_q_values = rewards_sample + self.gamma * tf.reduce_max(
-                        future_rewards, axis=1
-                    )
-
-                    # If final frame set the last value to -1
-                    updated_q_values = updated_q_values * (1 - done_sample) - done_sample
-
-                    # Create a mask so we only calculate loss on the updated Q-values
-                    masks = tf.one_hot(action_sample, self.num_actions)
-
-                    with tf.GradientTape() as tape:
-                        # Train the model on the states and updated Q-values
-                        q_values = self.model(state_sample)
-                        # Apply the masks to the Q-values to get the Q-value for action taken
-                        q_action = tf.reduce_sum(tf.multiply(q_values, masks), axis=1)
-                        # Calculate loss between new Q-value and old Q-value
-                        loss = self.loss_function(updated_q_values, q_action)
-                        self.loss_history.append(loss)
-
-                    # Backpropagation
-                    grads = tape.gradient(loss, self.model.trainable_variables)
-                    self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
-
-                if self.frame_count % self.update_target_network == 0:
-                    # update the the target network with new weights
-                    self.model_target.set_weights(self.model.get_weights())
-
-                    # Log details
-                    self.log(tm_start)
-                    tm_start = time.time()
-
-                    self.loss_history = []
-
-                # Limit the state and reward history
-                if len(self.rewards_history) > self.max_memory_length:
-                    del self.rewards_history[:1]
-                    del self.state_history[:1]
-                    del self.state_next_history[:1]
-                    del self.action_history[:1]
-                    del self.done_history[:1]
+                # Update every N frame and batch size is enough
+                if len(self.done_history) > self.batch_size and self.frame_count % self.update_after_actions == 0:
+                    self.replay()
 
                 if done:
                     break
             # env work cycle end
 
             # Update running reward to check condition for solving
-            self.episode_reward_history.append(episode_reward)
-            if len(self.episode_reward_history) > 20:
-                del self.episode_reward_history[:1]
+            self.episode_reward_history.append(self.episode_reward)
             self.running_reward = np.mean(self.episode_reward_history)
+
+            # print episode results
+            print(self.get_episode_message())
+
+            # Update target network every N episodes
+            if self.episode_count % self.update_target_network == 0:
+                self.model_target.set_weights(self.model.get_weights())
 
             # Stop criteria
             if goal_reward is not None and self.running_reward >= goal_reward:  # Condition to consider the task solved
-                #logger.critical("Solved at episode %s!", self.episode_count)
                 break
 
             if max_frames is not None and self.frame_count >= max_frames:
-                #logger.critical("Frame %s was reached!", self.frame_count)
                 break
 
             if max_episodes is not None and self.episode_count >= max_episodes:
-                #logger.critical("Episode %s was reached!", self.episode_count)
                 break
 
-            if self.halt:
-                logger.critical("The training process is stopped at %s frame", self.frame_count)
-                break
-
-    def log(self, tm_start):
-        tm_end = time.time()
+    def get_episode_message(self):
         tm_now = datetime.now().strftime("%H:%M:%S")
+        episode_duration = time.time() - self.episode_start
+        loss_mean = np.mean(self.episode_loss_history)
 
-        template = "{0} ({1:>3} sec) | reward: {2:>5.2f} at episode {3}, frame count {4}," \
-                   " epsilon: {5:.2f}, loss:{6:.2f}"
-        message = template.format(
-            tm_now,
-            int(tm_end - tm_start),
-            np.mean(self.episode_reward_history),
-            self.episode_count,
-            self.frame_count,
-            self.epsilon,
-            np.mean(self.loss_history)
-        )
-        logger.warning(message)
-
-    def save_config(self):
-        config = {}
-        config["model"] = self.epsilmodelon
-        config["model_target"] = self.model_target
-        config["epsilon"] = self.epsilon
-        config["action_history"] = self.action_history
-        config["state_history"] = self.state_history
-        config["state_next_history"] = self.state_next_history
-        config["rewards_history"] = self.rewards_history
-        config["done_history"] = self.done_history
-        config["episode_reward_history"] = self.episode_reward_history
-        config["loss_history"] = self.loss_history
-        config["running_reward"] = self.running_reward
-        config["episode_count"] = self.episode_count
-        config["frame_count"] = self.frame_count
-        return config
-
-    def load_config(self, config):
-        keys = config.keys()
-        for key in keys:
-            try:
-                setattr(self, key, config[key])
-            except Exception as err:
-                print(f"{key} not found in agent")
-
+        message = f"{tm_now} ({episode_duration:<4.1f} sec) | reward: {self.episode_reward:<8.2f} " \
+                  f"at episode {self.episode_count:<4} | frame {self.frame_count:<6} | " \
+                  f"eps: {self.epsilon:<4.2f} | loss: {loss_mean:.5f}"
+        return message

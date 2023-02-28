@@ -163,6 +163,11 @@ class DQNAgentV1:
             # action = tf.argmax(action_probs[0]).numpy()
             action = np.argmax(action_probs[0])
 
+        # Decay probability of taking random action
+        if self.epsilon > self.epsilon_min:
+            self.epsilon -= self.epsilon_decay
+            # self.epsilon = max(self.epsilon, self.epsilon_min)
+
         return action
 
     def replay(self):
@@ -221,10 +226,6 @@ class DQNAgentV1:
                 # env.render()
                 action = self.act(state)
 
-                # Decay probability of taking random action
-                if self.epsilon > self.epsilon_min:
-                    self.epsilon -= self.epsilon_decay
-                    # self.epsilon = max(self.epsilon, self.epsilon_min)
 
                 # Apply the sampled action in our environment
                 next_state, reward, done, _ = self.env.step(action)

@@ -1,8 +1,3 @@
-"""
-!!!!!  плохая реализация, криво работает эпсилон и тренировка на батче очень редко!
-
-"""
-
 import time
 import copy
 import random
@@ -12,11 +7,10 @@ from collections import deque
 import numpy as np
 import tensorflow as tf
 
-
 logger = logging.getLogger(__name__)
 
 
-class DQNAgentV1Episode:
+class DQNAgentV1Frame:
     def __init__(self, env, model, model_target):
         self.env = env
         self.model = model
@@ -34,7 +28,7 @@ class DQNAgentV1Episode:
         # Epsilon greedy parameter
         self.epsilon = 1
         self.epsilon_min = 0.01  # Minimum epsilon greedy parameter
-        self.epsilon_decay = 0.99
+        self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
 
         # Number of frames to take random action and observe output
         self.epsilon_random_frames_factor = 0.05
@@ -47,7 +41,7 @@ class DQNAgentV1Episode:
 
         self.max_steps_per_episode = 10000
         self.episode_count = 0
-        self.episode_start = 0
+        self.cycle_start = 0
         self.episode_reward = 0
         self.frame_count = 0
 
@@ -65,6 +59,9 @@ class DQNAgentV1Episode:
         self.episode_reward_history = deque(maxlen=self.max_reward_length)
         self.running_reward = 0
 
+        self.cycle_loss_history = []
+        self.running_losses = deque(maxlen=self.max_reward_length)
+
         self.loss_function = None
         # self.learning_rate = 0.00012  # rate at which NN adjusts models parameters via SGD to reduce cost
         self.optimizer = None
@@ -72,7 +69,6 @@ class DQNAgentV1Episode:
         self.init()
 
     def init(self):
-
         self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
 
         self.epsilon_random_frames = int(self.epsilon_greedy_frames * self.epsilon_random_frames_factor)
@@ -85,6 +81,9 @@ class DQNAgentV1Episode:
         self.rewards_history = []
         self.done_history = []
         self.episode_reward_history = deque(maxlen=self.max_reward_length)
+        self.running_reward = 0
+
+        self.cycle_loss_history = []
 
         np.random.seed(0)
 
@@ -96,7 +95,7 @@ class DQNAgentV1Episode:
     def load_config(self, config):
         keys = config.keys()
         for key in keys:
-            if hasattr(self, 'attr1'):
+            if hasattr(self, key):
                 setattr(self, key, config[key])
             else:
                 print(f"Key {key} not found in agent")
@@ -159,20 +158,24 @@ class DQNAgentV1Episode:
         # Use epsilon-greedy for exploration
         if self.frame_count < self.epsilon_random_frames or self.epsilon > np.random.rand(1)[0]:
             # Take random action
-            #action = np.random.choice(self.action_size)
+            # action = np.random.choice(self.action_size)
             action = random.sample(range(self.action_size), 1)[0]
         else:
             state_tensor = self._sample_transformer(state)
             # Take best action
             action_probs = self.model(state_tensor, training=False)
-            #action = tf.argmax(action_probs[0]).numpy()
+            # action = tf.argmax(action_probs[0]).numpy()
             action = np.argmax(action_probs[0])
+
+        # Decay probability of taking random action
+        if self.epsilon > self.epsilon_min:
+            self.epsilon -= self.epsilon_decay
 
         return action
 
     def replay(self):
         # Get indices of samples for replay buffers
-        #indices = np.random.choice(range(len(self.done_history)), size=self.batch_size)
+        # indices = np.random.choice(range(len(self.done_history)), size=self.batch_size)
         indices = random.sample(range(len(self.done_history)), self.batch_size)
         state_sample = [self.state_history[i] for i in indices]
         next_state_sample = [self.state_next_history[i] for i in indices]
@@ -195,21 +198,30 @@ class DQNAgentV1Episode:
         # Create a mask so we only calculate loss on the updated Q-values
         masks = tf.one_hot(action_sample, self.action_size)
 
-        with tf.GradientTape() as tape:
-            # Train the model on the states and updated Q-values
-            q_values = self.model(state_sample)
-            # Apply the masks to the Q-values to get the Q-value for action taken
-            q_action = tf.reduce_sum(tf.multiply(q_values, masks), axis=1)
-            # Calculate loss between new Q-value and old Q-value
-            loss = self.loss_function(updated_q_values, q_action)
+        # Train the model on the states and updated Q-values
+        q_values = self.model(state_sample)
+        # Apply the masks to the Q-values to get the Q-value for action taken
+        q_action = tf.reduce_sum(tf.multiply(q_values, masks), axis=1)
+        # Calculate loss between new Q-value and old Q-value
+        loss = self.loss_function(updated_q_values, q_action)
+        self.cycle_loss_history.append(loss)
 
         # Backpropagation
-        grads = tape.gradient(loss, self.model.trainable_variables)
-        self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+        with tf.GradientTape() as tape:
+            grads = tape.gradient(loss, self.model.trainable_variables)
+            self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
-    def train(self, goal_reward=None, max_frames=None, max_episodes=None):
+
+    def train(self, goal_reward=None, max_frames=None):
+        """Текущая ревализация заточена на работу c тестированием модели.
+        Поэтому обучение останавливется после обновления весов. Следующий вызов будет продолжаться до следующего обновления весов.
+        Критерии остановки будут определяться в TrainManager и оцениваться по текущим результатам модели на тестовых данных
+        """
+
+        self.cycle_start = time.time()
         while True:
-            self.episode_start = time.time()
+
+            self.cycle_loss_history = []
             self.episode_reward = 0
             self.episode_count += 1
 
@@ -217,11 +229,14 @@ class DQNAgentV1Episode:
             state = self.env.reset()
 
             # env work cycle start
-            for frame in range(
-                    self.max_steps_per_episode):  # time represents a frame of the game; goal is to keep pole upright as long as possible up to range, e.g., 500 or 5000 timesteps
+            #for frame in range(self.max_steps_per_episode):  # time represents a frame of the game; goal is to keep pole upright as long as possible up to range, e.g., 500 or 5000 timesteps
+            while True:
+                self.cycle_start = time.time()
                 self.frame_count += 1
-
+                # Render the environment state
                 # env.render()
+
+                # Get action
                 action = self.act(state)
 
                 # Apply the sampled action in our environment
@@ -230,45 +245,42 @@ class DQNAgentV1Episode:
 
                 # Save actions and states in replay buffer
                 self.remember(state, action, reward, next_state, done)
-
                 state = next_state
+
+                # Update every N frame and batch size is enough
+                if len(self.done_history) > self.batch_size and self.frame_count % self.update_after_actions == 0:
+                    self.replay()
+
+                if self.frame_count % self.update_target_network == 0:
+                    self.model_target.set_weights(self.model.get_weights())
+                    # print episode results
+                    print(self.get_message())
+                    # erase loss history
+                    self.cycle_loss_history = []
+
+                    if goal_reward is None and max_frames is None:
+                        # Критерии не заданы, поэтому выходим
+                        break
+
                 if done:
+                    # Update running reward to check condition for solving
+                    self.episode_reward_history.append(self.episode_reward)
+                    self.running_reward = np.mean(self.episode_reward_history)
                     break
-            # env work cycle end
-
-            # Update
-            if len(self.done_history) > self.batch_size:
-                self.replay()
-
-            # Update running reward to check condition for solving
-            self.episode_reward_history.append(self.episode_reward)
-            self.running_reward = np.mean(self.episode_reward_history)
-
-            # update the the target network with new weights
-            self.model_target.set_weights(self.model.get_weights())
-
-            # print episode results
-            print(self.get_episode_message())
-
-            if self.epsilon > self.epsilon_min:
-                self.epsilon *= self.epsilon_decay
 
             # Stop criteria
-            if goal_reward is not None and self.running_reward >= goal_reward:  # Condition to consider the task solved
+            if goal_reward is None or self.running_reward >= goal_reward:  # Condition to consider the task solved
                 break
 
-            if max_frames is not None and self.frame_count >= max_frames:
+            if max_frames is None or self.frame_count >= max_frames:
                 break
 
-            if max_episodes is not None and self.episode_count >= max_episodes:
-                break
-
-    def get_episode_message(self):
+    def get_message(self):
         tm_now = datetime.now().strftime("%H:%M:%S")
-        episode_duration = time.time() - self.episode_start
+        cycle_duration = time.time() - self.cycle_start
+        loss_mean = np.mean(self.cycle_loss_history)
 
-        message = f"{tm_now} ({episode_duration:<4.1f} sec) | reward: {self.episode_reward:<5.2f} " \
+        message = f"{tm_now} ({cycle_duration:<4.1f} sec) | reward: {self.running_reward:<8.2f} " \
                   f"at episode {self.episode_count:<4} | frame {self.frame_count:<6} | " \
-                  f"eps: {self.epsilon:<4.2f}"
+                  f"eps: {self.epsilon:<4.2f} | loss: {loss_mean:.5f}"
         return message
-

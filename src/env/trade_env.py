@@ -3,13 +3,12 @@ import logging
 import numpy as np
 
 from .log_setup import logger_setup
-import train_tools.live_train_plot as train_plot
 
 
 class TradeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, core, dp_factory, alias="test run", log=True, log_obs=True):
+    def __init__(self, core, dp_factory, alias="test run", log=True, log_obs=False):
         super().__init__()
         self.alias = alias
         self.core = core
@@ -17,22 +16,20 @@ class TradeEnv(gym.Env):
         self.log = log
         self.log_obs = log_obs
 
-        #self.live_train_plot = train_plot.LiveTrainPlot(self.alias)
+        self.logger = logging.getLogger(__name__)
+        self.logger = logger_setup(self.logger, self.alias)
 
         self.episode = -1
-        self.step_info = dict()
+        self.step_num = 0
+        self.step_info = {}
 
         data_point = self.dp_factory.reset()
         self.core.reset(data_point=data_point)
-
-        self.logger = logging.getLogger(__name__)
-        self.logger = logger_setup(self.logger, self.alias)
 
         self.observation_space = self.get_observation_space()
         self.action_space = self.get_action_space()
 
         self.logger.info("Observation space {}".format(self.observation_space))
-        self.step_num = 0
 
     def get_action_space(self):
         return self.core.get_action_space()
@@ -49,11 +46,6 @@ class TradeEnv(gym.Env):
 
     def reset(self):
         self.step_num = 0
-        metrics = self.core.get_metrics()
-        #self.log_episode_result(metrics)
-        #self.live_train_plot.update_plot(metrics)
-
-        # Сброс датасета и подготовка наблюдения
         self.episode += 1
 
         data_point = self.dp_factory.reset()
@@ -63,9 +55,7 @@ class TradeEnv(gym.Env):
 
     def step(self, action):
         reward, action_result = self.core.apply_action(action)
-        #self.step_info = self.get_step_info()
 
-        # new cycle ->>>
         data_point, done = self.dp_factory.get_next_step()
         observation = self.core.get_observation(data_point)
         self.step_num = self.step_num + 1
@@ -109,7 +99,6 @@ class TradeEnv(gym.Env):
         }
         return step_info
 
-
 def obs_to_string(observation):
     if isinstance(observation, list):
         obs_formatted = []
@@ -121,3 +110,21 @@ def obs_to_string(observation):
         obs_formatted = np.array2string(observation, max_line_width=500, precision=8, separator=',',
                                         suppress_small=True).replace("\n", " | ")
     return obs_formatted
+
+
+class TradeEnv1Trade(TradeEnv):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def step(self, action):
+        reward, action_result = self.core.apply_action(action)
+
+        data_point, done = self.dp_factory.get_next_step()
+        observation = self.core.get_observation(data_point)
+        self.step_num = self.step_num + 1
+
+        # вариант среды с одной операцией
+        if action == 3:
+            done = True
+
+        return observation, reward, done, self.step_info

@@ -51,18 +51,18 @@ class TrainPlot:
         self.fig, self.ax = plt.subplots(figsize=(fig_size_x, fig_size_y),
                                          nrows=3, dpi=dpi, constrained_layout=True)
 
-        ax0_secondary = self.ax[0].twinx()
 
-        #self.lines["train"]["Penalties"] = PlotObject('Penalties', self.ax[0], 'crimson', zero_centered=True,
-        #                                              zero_line=True)
+        self.lines["train"]["Balance"] = PlotObject('Balance train', self.ax[0], 'forestgreen', zero_line=True)
+        self.lines["test"]["Balance"] = PlotObject('Balance test', self.ax[0], 'darkorange')
 
-        self.lines["train"]["Loss_mean"] = PlotObject('Loss_mean', self.ax[0], 'crimson', zero_centered=True,
-                                                      zero_line=True)
+        # self.lines["train"]["Penalties"] = PlotObject('Penalties', self.ax[0], 'crimson', zero_centered=True, zero_line=True)
+        # self.lines["train"]["Loss_mean"] = PlotObject('Loss_mean', self.ax[0], 'crimson', zero_centered=True, zero_line=True)
+        # ax0_secondary = self.ax[0].twinx()
+        # self.lines["train"]["TotalReward"] = PlotObject('TotalReward', ax0_secondary, 'dodgerblue', zero_centered=True)
 
-        self.lines["train"]["TotalReward"] = PlotObject('TotalReward', ax0_secondary, 'dodgerblue', zero_centered=True)
+        self.lines["train"]["Penalties"] = PlotObject('Penalties train', self.ax[1], 'cadetblue', zero_line=True)
+        self.lines["test"]["Penalties"] = PlotObject('Penalties test', self.ax[1], 'darksalmon')
 
-        self.lines["train"]["Balance"] = PlotObject('Balance train', self.ax[1], 'forestgreen', zero_line=True)
-        self.lines["test"]["Balance"] = PlotObject('Balance test', self.ax[1], 'darkorange')
 
         self.lines["train"]["NegTrades"] = PlotObject('NegTrades', self.ax[2], 'orangered')
         self.lines["train"]["PosTrades"] = PlotObject('PosTrades', self.ax[2], 'royalblue')
@@ -72,7 +72,7 @@ class TrainPlot:
         self.ax[2].grid()
 
         self.ax[0].legend(loc="upper left")
-        ax0_secondary.legend(loc="lower left")
+        #ax0_secondary.legend(loc="lower left")
         self.ax[1].legend(loc="upper left")
         self.ax[2].legend(loc="upper left")
 
@@ -105,11 +105,15 @@ class TrainPlot:
             episode = step.get("episode")
             step_data = step.get(segment)
 
-            if step_data is not None:
+            if step_data is  None:
+                step_data = {}
                 step_data["idx"] = episode
-                data.append(step_data)
+            else:
+                step_data["idx"] = episode
+            data.append(step_data)
 
         df = pd.DataFrame(data)
+        df.fillna(method='bfill', limit=1, inplace=True)
         if df.shape[0]:
             df = df.set_index("idx")
 

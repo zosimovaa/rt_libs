@@ -133,19 +133,22 @@ def only_negative_reward(func):
     return wrapper
 
 
-class ActionControllerFixedWaitPenalty(ActionControllerDiffReward):
+class ActionControllerProfitReward(ActionControllerDiffReward):
     def _action_wait(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
             action_result = BadAction(self.context)
         else:
-            reward = self._get_penalty() * self.scale_wait
+            self.opposite_trade = self.context.get("trade", domain="OppositeTrade")
+            profit = self.opposite_trade.get_profit()
+            reward =  profit * self.scale_wait
             action_result = None
         return reward, action_result
 
     def _action_hold(self, ts, is_open):
         if is_open:
-            reward = self._get_penalty() * self.scale_hold
+            profit = self.context.trade.get_profit()
+            reward = profit * self.scale_hold
             action_result = None
         else:
             reward = self._get_penalty()
