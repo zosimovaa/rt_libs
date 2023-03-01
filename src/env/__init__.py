@@ -1,2 +1,2 @@
-from .trade_env import TradeEnv, TradeEnv1Trade
+from .trade_env import TradeEnv
 

@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractFeature(metaclass=abc.ABCMeta):
-    """Calculate features on the fly"""
+    """Calculate features_del on the fly"""
 
     def __init__(self, context, step_factor=(1,), scale_output=1):
         self.context = context
@@ -41,8 +41,8 @@ class AbstractFeature(metaclass=abc.ABCMeta):
 
 class AbstractFeatureWithHistory(AbstractFeature):
     """
-    For hard-to-calculate features. For each step, only the actual data point is calculated. The previous ones are stored in the cache.
-    But it is better to use precompute features for precomputation in the dataset, if possible.
+    For hard-to-calculate features_del. For each step, only the actual data point is calculated. The previous ones are stored in the cache.
+    But it is better to use precompute features_del for precomputation in the dataset, if possible.
     """
 
     def __init__(self, context, step_factor=(1,), scale_output=1):

@@ -1,3 +1,3 @@
-from .core_facade import RTCore
+from .facade import RTCore
 
 

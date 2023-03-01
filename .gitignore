@@ -14,7 +14,7 @@ src/core/observation_builder/__pycache__
 src/core/tickers/__pycache__
 src/core/facade/__pycache__
 src/core/context/__pycache__
-src/market_providers/__pycache__
+src/core/market_providers/__pycache__
 src/data_providers/__pycache__
 src/core/observation_builder/features/__pycache__/__init__.cpython-39.pyc
 src/core/observation_builder/features/__pycache__/abstract_class.cpython-39.pyc

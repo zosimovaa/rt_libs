@@ -94,9 +94,11 @@ class DQNAgent:
                 print(f"Key {key} not found in agent")
 
     def _sample_transformer(self, state):
+        """Работает для 2D сэмплов. Каждый элемент дополняет еще одной размерностью."""
         return list(map(lambda p: np.expand_dims(p, 0), state))
 
     def _batch_transformer(self, batch):
+        """работает для 2D батчей. После zip(*batch) получаем списки из фичей по размерностям"""
         return list(map(np.array, zip(*batch)))
 
     def _sample_transformer1(self, state):

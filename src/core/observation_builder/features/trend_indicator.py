@@ -1,5 +1,5 @@
 """
-Trend indicator features (experimental).
+Trend indicator features_del (experimental).
 """
 import logging
 import numpy as np

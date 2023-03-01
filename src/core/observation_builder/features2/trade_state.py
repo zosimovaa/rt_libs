@@ -1,5 +1,5 @@
 """
-Module with basic features - deal status
+Module with basic features_del - deal status
 """
 
 import logging

@@ -50,25 +50,24 @@ class ActionControllerDiffReward(ActionControllerInterface):
         self.context.set("trade", self.opposite_trade, domain="OppositeTrade")
 
     def apply_action(self, action):
-        ts = self.context.get("ts")
         is_open = self.context.get("is_open", domain="Trade")
         handler = getattr(self, self.handler[action])
-        reward, action_result = handler(ts, is_open)
+        reward, action_result = handler(is_open)
         return reward, action_result
 
-    def _action_wait(self, ts, is_open):
+    def _action_wait(self, is_open):
         if is_open:
             reward = self._get_penalty()
             action_result = BadAction(self.context)
         else:
-            if self.scale_wait>0:
+            if self.scale_wait > 0:
                 reward = -self._get_diff_reward() * self.scale_wait
             else:
                 reward = 0
             action_result = None
         return reward, action_result
 
-    def _action_open(self, ts, is_open):
+    def _action_open(self, is_open):
         if is_open:
             reward = self._get_penalty()
             action_result = BadAction(self.context)
@@ -84,7 +83,7 @@ class ActionControllerDiffReward(ActionControllerInterface):
             reward = -profit * self.scale_open
         return reward, action_result
 
-    def _action_hold(self, ts, is_open):
+    def _action_hold(self, is_open):
         if is_open:
             if self.scale_wait > 0:
                 reward = self._get_diff_reward() * self.scale_hold
@@ -96,7 +95,7 @@ class ActionControllerDiffReward(ActionControllerInterface):
             action_result = BadAction(self.context)
         return reward, action_result
 
-    def _action_close(self, ts, is_open):
+    def _action_close(self, is_open):
         if is_open:
             profit = self.context.get("profit", domain="Trade")
             reward = profit * self.scale_close

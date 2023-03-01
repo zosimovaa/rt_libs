@@ -110,21 +110,3 @@ def obs_to_string(observation):
         obs_formatted = np.array2string(observation, max_line_width=500, precision=8, separator=',',
                                         suppress_small=True).replace("\n", " | ")
     return obs_formatted
-
-
-class TradeEnv1Trade(TradeEnv):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def step(self, action):
-        reward, action_result = self.core.apply_action(action)
-
-        data_point, done = self.dp_factory.get_next_step()
-        observation = self.core.get_observation(data_point)
-        self.step_num = self.step_num + 1
-
-        # вариант среды с одной операцией
-        if action == 3:
-            done = True
-
-        return observation, reward, done, self.step_info

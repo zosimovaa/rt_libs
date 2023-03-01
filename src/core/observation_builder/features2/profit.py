@@ -1,5 +1,5 @@
 """
-Module with basic features - deal status, rate, profit.
+Module with basic features_del - deal status, rate, profit.
 """
 
 import logging
