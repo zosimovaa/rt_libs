@@ -4,7 +4,7 @@
 import logging
 
 from core2.actions import BadAction, AbstractTradeAction
-from core2.action_controller.base_action_controller import BaseActionController
+from core2.action_controller.base_action_router import BaseActionController
 from core2.actions import BadAction, TradeAction, OppositeTradeAction
 
 

@@ -1,4 +1,6 @@
-from .base_action_controller import BaseActionController
-from .train.trade_controller import BaseActionControllerDiffReward
-from .train.abstract_controller import AbstractTickerBasic, AbstractTickerOpenSignal, AbstractTickerCompleteTrade
-from .train.trade_controller import ActionControllerProfitReward
+from .base_action_router import BaseActionRouter
+from .train.action_controller_diff_reward import ActionControllerDiffReward
+#from .train.action_controller_diff_reward import ActionControllerProfitReward
+
+#from .train.abstract_controller import AbstractTickerBasic, AbstractTickerOpenSignal, AbstractTickerCompleteTrade
+

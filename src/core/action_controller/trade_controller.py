@@ -16,7 +16,7 @@ class ActionControllerDiffReward(ActionControllerInterface):
     В WAIT, HOLD - награда в виде изменения курса в процентах.
     Все веса регулируются коэффициентами, что позволяет какие-то факторы убирать в ноль или усиливать
     """
-    handler = {
+    router = {
         0: "_action_wait",
         1: "_action_open",
         2: "_action_hold",
@@ -51,7 +51,7 @@ class ActionControllerDiffReward(ActionControllerInterface):
 
     def apply_action(self, action):
         is_open = self.context.get("is_open", domain="Trade")
-        handler = getattr(self, self.handler[action])
+        handler = getattr(self, self.router[action])
         reward, action_result = handler(is_open)
         return reward, action_result
 
