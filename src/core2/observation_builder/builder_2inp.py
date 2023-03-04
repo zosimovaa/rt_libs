@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 class ObservationBuilder2Inp(BaseObservationBuilder):
-    def __init__(self, context, static_features, cnn_features):
+    def __init__(self, context, static=[], cnn=[]):
         self.context = context
-        self.static_features = static_features
-        self.cnn_features = cnn_features
+        self.static_features = static
+        self.cnn_features = cnn
 
     def reset(self):
         """Сброс параметров"""

@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class ObservationBuilderInput(BaseObservationBuilder):
-    def __init__(self, *inputs):
+    def __init__(self, inputs=None):
         self.inputs = inputs
 
     def reset(self):
