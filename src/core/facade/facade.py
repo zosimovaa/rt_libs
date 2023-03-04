@@ -27,7 +27,7 @@ class RTCore:
     #@with_exception(RTCoreError)
     def get_action_space(self):
         # todo implement method in the action_controller
-        action_space = len(self.action_controller.handler)
+        action_space = len(self.action_controller.router)
         logger.debug("Action space: %s", action_space)
         return action_space
 

@@ -27,14 +27,15 @@ class RTCore:
     #@with_exception(RTCoreError)
     def get_action_space(self):
         # todo implement method in the action_controller
-        action_space = len(self.action_controller.handler)
+        action_space = len(self.action_controller.router)
         return action_space
 
     #@with_exception(RTCoreError)
     def reset(self, data_point=None):
         self.metric_collector.reset()
         self.context.reset()
-        self.context.set_dp(data_point)
+        if data_point is not None:
+            self.context.set_dp(data_point)
         self.observation_builder.reset()
         self.action_controller.reset()
 
