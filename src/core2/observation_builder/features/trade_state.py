@@ -15,6 +15,5 @@ class TradeStateFeature(BaseFeature):
         super().__init__(context)
 
     def _get(self):
-        trade_state = self.context.get("is_open", domain="Trade")
-        #logger.debug("Get trade state() -> {}".format(trade_state))
-        return trade_state
+        trade_state = self.context.get("is_open")
+        return [trade_state]

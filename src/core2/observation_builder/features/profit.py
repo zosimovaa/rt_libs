@@ -13,57 +13,49 @@ logger = logging.getLogger(__name__)
 
 class ProfitFeature2D(BaseFeature):
     """Profit calculation"""
-    def __init__(self, context, step_factor=(1,), scale_output=30):
+    def __init__(self, context, step_factor=1, scale_output=30):
         super().__init__(context, step_factor=step_factor, scale_output=scale_output)
 
     def _get(self):
-        trade_state = self.context.get("is_open", domain="Trade")
+        trade_state = self.context.get("is_open")
         data_point = self.context.data_point
-        trade = self.context.trade
-        obs = []
-        for sf in self.step_factor:
-            if trade_state:
-                timestamps = data_point.get_points(step_factor=sf)
-                mask = (timestamps > trade.open_ts) & (timestamps <= trade.close_ts)
-                current_rates = data_point.get_values("highest_bid", step_factor=sf)
-                current_rates = current_rates[sf - 1::sf]
-                profit = current_rates / trade.open_price - 1 - trade.market_fee
-                profit = profit * mask * self.scale_output
-            else:
-                profit = np.zeros(data_point.observation_len)
+        trade = self.context.get("trade")
 
-            obs.append(profit.reshape(-1, 1))
+        if trade_state:
+            timestamps = data_point.get_points(step_factor=self.step_factor)
+            mask = (timestamps > trade.open_ts) & (timestamps <= trade.close_ts)
+            current_rates = data_point.get_values("highest_bid", step_factor=self.step_factor)
+            current_rates = current_rates[self.step_factor - 1::self.step_factor]
+            profit = current_rates / trade.open_price - 1 - trade.market_fee
+            profit = profit * mask * self.scale_output
+        else:
+            profit = np.zeros(data_point.observation_len)
 
-        feature = np.concatenate([*obs], axis=1)
-        return feature
+        return profit.reshape(-1, 1)
 
 
 class ProfitDiffFeature2D(BaseFeature):
     """Profit calculation"""
 
-    def __init__(self, context, step_factor=(1,), scale_output=100):
+    def __init__(self, context, step_factor=1, scale_output=100):
         super().__init__(context, step_factor=step_factor, scale_output=scale_output)
 
     def _get(self):
-        trade_state = self.context.get("is_open", domain="Trade")
+        trade_state = self.context.get("is_open")
         data_point = self.context.data_point
-        trade = self.context.trade
-        obs = []
-        for sf in self.step_factor:
-            if trade_state:
-                timestamps = data_point.get_points(step_factor=sf, num=data_point.observation_len + 1)
-                mask = (timestamps > trade.open_ts) & (timestamps <= trade.close_ts)
-                current_rates = data_point.get_values("highest_bid", step_factor=sf, num=data_point.observation_len + 1)
-                current_rates = current_rates[sf - 1::sf]
-                profit = current_rates / trade.open_price - 1 - trade.market_fee
-                profit = profit * mask
+        trade = self.context.get("trade")
 
-                profit_diff = np.diff(profit) * self.scale_output
+        if trade_state:
+            timestamps = data_point.get_points(step_factor=self.step_factor, num=data_point.observation_len + 1)
+            mask = (timestamps > trade.open_ts) & (timestamps <= trade.close_ts)
+            current_rates = data_point.get_values("highest_bid", step_factor=self.step_factor, num=data_point.observation_len + 1)
+            current_rates = current_rates[self.step_factor - 1::self.step_factor]
+            profit = current_rates / trade.open_price - 1 - trade.market_fee
+            profit = profit * mask
 
-            else:
-                profit_diff = np.zeros(data_point.observation_len)
+            profit_diff = np.diff(profit) * self.scale_output
 
-            obs.append(profit_diff.reshape(-1, 1))
+        else:
+            profit_diff = np.zeros(data_point.observation_len)
 
-        feature = np.concatenate([*obs], axis=1)
-        return feature
+        return profit_diff.reshape(-1, 1)

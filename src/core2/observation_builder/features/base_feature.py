@@ -37,11 +37,12 @@ class BaseFeature(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _get(self) -> np.ndarray:
         """The method returns the current feature value for the given datapoint"""
+        raise NotImplementedError
 
 
 class BaseFeatureWithHistory(BaseFeature):
     """
-    For hard-to-calculate features_del. For each step, only the actual data point is calculated. The previous ones are stored in the cache.
+    For hard-to-calculate features. For each step, only the actual data point is calculated. The previous ones are stored in the cache.
     But it is better to use precompute features for precomputation in the dataset, if possible.
     """
 
@@ -94,9 +95,9 @@ class BaseFeatureWithHistory(BaseFeature):
         """
         raise NotImplementedError
 
-        indexes = dp.get_indexes()
-        data = deque(maxlen=len(indexes))
-        for cursor in indexes:
-            point = self._build_point(dp, cursor=cursor)
-            data.append(point)
-        return data
+        #indexes = dp.get_indexes()
+        #data = deque(maxlen=len(indexes))
+        #for cursor in indexes:
+        #    point = self._build_point(dp, cursor=cursor)
+        #    data.append(point)
+        #return data
