@@ -1,21 +1,22 @@
-from core.facade import RTCore
+from .facade import RTCore
 
-from core import context
-from core import action_controller
-from core import observation_builder
-from core.observation_builder import features2
+from core2 import context
+from core2 import action_controller
+from core2 import observation_builder
+from .observation_builder import features
+from .observation_builder import inputs
 
 
-class ConstructorGen1:
+class ConstructorGen2:
     """Конструктор core из конфига"""
 
     def get_core(self, config):
         """Основной метод для сборки core"""
         context_config = config.get("context")
-        context_instance = self._context_constructor(context_config)
+        context_instance = self._get_instance(context, context_config)
 
-        at_config = config.get("action_controller")
-        action_controller_instance = self._ticker_constructor(at_config, context_instance)
+        ac_config = config.get("action_controller")
+        action_controller_instance = self._get_instance(action_controller, ac_config, context=context_instance)
 
         ob_config = config.get("observation_builder")
         observation_builder_instance = self._observation_builder_constructor(ob_config, context_instance)
@@ -23,45 +24,33 @@ class ConstructorGen1:
         core = RTCore(context_instance, action_controller_instance, observation_builder_instance)
         return core
 
-    def _context_constructor(self, config):
-        """Метод собирает контекст"""
+    def _get_instance(self, source, config, context=None):
         class_name = config.get("class")
         params = config.get("params")
-        context_instance = getattr(context, class_name)(**params)
-        return context_instance
-
-    def _ticker_constructor(self, config, context_instance):
-        """Метод собирает экшн контроллер"""
-        class_name = config.get("class")
-        params = config.get("params")
-        action_controller_instance = getattr(action_controller, class_name)(context_instance, **params)
-        return action_controller_instance
-
-    def _feature_builder(self, features_config, context_instance):
-        """метод собирает конкретную фичу"""
-        feature_list = []
-        for feat_cfg in features_config:
-            feature_class_name = feat_cfg.get("class")
-            params = feat_cfg.get("params")
-
-            if params is not None:
-                feat_instance = getattr(features2, feature_class_name)(context_instance, **params)
-            else:
-                feat_instance = getattr(features2, feature_class_name)(context_instance)
-            feature_list.append(feat_instance)
-
-        return feature_list
+        if context is not None:
+            instance = getattr(source, class_name)(context, **params)
+        else:
+            instance = getattr(source, class_name)(**params)
+        return instance
 
     def _observation_builder_constructor(self, config, context_instance):
         """Метод собирает observation_builder из фичей"""
-        class_name = config.get("class")
+        ob_class = config.get("class")
+        inputs_config = config.get("inputs")
 
-        static_config = config.get("features_del").get("static")
-        series_config = config.get("features_del").get("series")
+        inputs_instances = []
+        for input_config in inputs_config:
 
-        static_feats = self._feature_builder(static_config, context_instance)
-        series_feats = self._feature_builder(series_config, context_instance)
+            feature_instances = []
+            features_config = input_config.get("features")
+            for feature_config in features_config:
+                feature_instance = self._get_instance(features, feature_config, context=context_instance)
+                feature_instances.append(feature_instance)
 
-        observation_builder_class = getattr(observation_builder, class_name)
-        observation_builder_instance = observation_builder_class(context_instance, static=static_feats, series=series_feats)
-        return observation_builder_instance
+            input_class = input_config.get("class")
+            input_inst = getattr(inputs, input_class)(*feature_instances)
+
+            inputs_instances.append(input_inst)
+
+        ob_instance = getattr(observation_builder, ob_class)(inputs_instances)
+        return ob_instance

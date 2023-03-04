@@ -58,7 +58,6 @@ class ConstructorGen1:
 
         static_config = config.get("features").get("static")
         series_config = config.get("features").get("series")
-        series_config = config.get("features").get("series")
 
         static_feats = self._feature_builder(static_config, context_instance)
         series_feats = self._feature_builder(series_config, context_instance)
