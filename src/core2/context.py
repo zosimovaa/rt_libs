@@ -7,11 +7,11 @@ class Context:
         self.params = {}
         self.data_point = None
 
-    def set(self, param, value):
-        self.params[param] = value
+    def set(self, name, value):
+        self.params[name] = value
 
-    def get(self, param):
-        return self.params.get(param)
+    def get(self, name):
+        return self.params.get(name)
 
     def set_dp(self, data_point):
         self.data_point = data_point
