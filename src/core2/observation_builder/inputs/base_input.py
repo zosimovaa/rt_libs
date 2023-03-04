@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseInput:
-    def __init__(self, **features):
+    def __init__(self, *features):
         self.features = features
 
     def reset(self):
