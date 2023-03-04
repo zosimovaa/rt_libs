@@ -7,7 +7,7 @@ from .base_precompute import BasePrecompute
 logger = logging.getLogger(__name__)
 
 
-class BasePrecomputeOrderbookDiffFeature(BasePrecompute):
+class PrecomputeOrderbookDiffFeature(BasePrecompute):
 
     def process(self, data, level):
         # 1. Построить объемы по asks и bids
