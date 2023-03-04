@@ -1,13 +1,13 @@
 import logging
 import numpy as np
 
-from .base_train_action_controller import BaseTrainActionController
+from ..base_action_router import BaseActionRouter
 from ...actions import BadAction, TradeAction
 
 logger = logging.getLogger(__name__)
 
 
-class ActionControllerDiffReward(BaseTrainActionController):
+class ActionControllerDiffReward(BaseActionRouter):
     """Класс реализует логику расчета награды/штрафа за действия.
     Базовая версия - награда из профита выдается только при закрытии.
 
@@ -23,25 +23,28 @@ class ActionControllerDiffReward(BaseTrainActionController):
                  scale_wait=0, scale_open=0, scale_hold=0, scale_close=100,
                  num_mean_obs=2):
 
+        super().__init__(context=context, penalty=penalty, reward=reward)
 
-
-        self.num_mean_obs = num_mean_obs
         self.market_fee = market_fee
 
-        print("ActionControllerDiffReward")
+        self.scale_wait = scale_wait
+        self.scale_open = scale_open
+        self.scale_hold = scale_hold
+        self.scale_close = scale_close
+
+        self.num_mean_obs = num_mean_obs
+
         self.opposite_trade = None
 
-        super().__init__(context=context,
-                         penalty=penalty, reward=reward, market_fee=market_fee,
-                         scale_wait=scale_wait, scale_open=scale_open, scale_hold=scale_hold, scale_close=scale_close)
-
-        self.context.set("opposite_trade", self.opposite_trade)
+        self.reset()
 
     def reset(self):
         """Reset current action controller state"""
         self.trade = None
-        self.context.set("is_open", False)
         self.context.set("trade", self.trade)
+        self.context.set("is_open", False)
+
+        self.context.set("market_fee", self.market_fee)
 
         ts = self.context.get("ts")
         highest_bid = self.context.get("highest_bid")
@@ -65,12 +68,12 @@ class ActionControllerDiffReward(BaseTrainActionController):
     def _action_open(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-
             action_result = BadAction(ts, 1, is_open)
         else:
             open_price = self.context.get("lowest_ask")
             self.trade = TradeAction(ts, open_price, self.market_fee)
             self.context.set("trade", self.trade)
+            self.context.set("is_open", True)
             action_result = self.trade
 
             if self.scale_open == 0:
@@ -102,7 +105,7 @@ class ActionControllerDiffReward(BaseTrainActionController):
             reward = profit * self.scale_close
             self.trade.close(ts, highest_bid)
             action_result = self.trade
-
+            self.context.set("is_open", False)
             self.opposite_trade = TradeAction(ts, highest_bid, self.market_fee)
         else:
             reward = self._get_penalty()

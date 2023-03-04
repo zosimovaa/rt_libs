@@ -6,8 +6,8 @@
 """
 import logging
 
-from core2.metrics import MetricCollector
-from core.facade.errors import RTCoreError
+from .metrics import MetricCollector
+from .errors import RTCoreError
 
 from basic_application import with_exception
 

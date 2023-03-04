@@ -1,3 +1,3 @@
-from .abstract_class import PrecomputeAbstractClass
+from .base_precompute import BasePrecompute
 
 from .orderbook_volumes import PrecomputeOrderbookDiffFeature

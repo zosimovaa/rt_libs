@@ -4,12 +4,11 @@ This component implements the logic of the exchange
  - actions - describes the agent's current action and required context
  - context - single context of all components
  - observation_builder - builds an observation based on the current data point
- - tickers - implements action reward logic
+ - action_controller - implements action reward logic
 
 """
 from .actions import BadAction, TradeAction
-
 from .facade import RTCore
 
-from core.constructor import ConstructorGen1
+from .constructor import ConstructorGen2
 

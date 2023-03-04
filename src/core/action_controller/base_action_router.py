@@ -23,8 +23,7 @@ class BaseActionRouter:
         self.reward = reward
 
         self.trade = None
-        self.reset()
-        print("BaseActionRouter")
+        #self.reset()
 
     def reset(self):
         """Reset current action controller state"""

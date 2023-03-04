@@ -3,15 +3,15 @@
 """
 import logging
 
-from core2.actions import BadAction, AbstractTradeAction
-from core2.action_controller.base_action_router import BaseActionController
-from core2.actions import BadAction, TradeAction, OppositeTradeAction
+from ..base_action_router import BaseActionRouter
+
+from ...actions import BadAction, TradeAction
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractTickerBasic(BaseActionController):
+class AbstractSequencePrediction(BaseActionRouter):
     """
     Класс реализует логику расчета награды для сценариев обучения корректной последовательности и
     реакции на сигнал продажи.

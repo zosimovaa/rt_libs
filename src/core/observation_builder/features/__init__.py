@@ -1,14 +1,9 @@
-from .abstract_class import AbstractFeature
-from .abstract_class import AbstractFeatureWithHistory
+from .base_feature import BaseFeature, BaseFeatureWithHistory
 
-from .basic import TradeStateFeature
-from .basic import Rates1DFeature
-from .basic import Rates2DFactorFeature
-from .basic import ProfitFeature
-from .basic import OppositeProfitFeature
-
-from .trend_indicator import TrendIndicatorFeature
-
-from .volume import TradeBalanceFeature
-
+from .trade_state import TradeStateFeature
+from .rates import RatesFeature2D
+from .profit import ProfitFeature2D, ProfitDiffFeature2D
 from .orderbook import OrderbookDiffFeature2D
+from .volumes import TradeVolumes2D, TradeCount2D
+
+

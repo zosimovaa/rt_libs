@@ -2,12 +2,12 @@ import json
 import logging
 import numpy as np
 
-from .abstract_class import PrecomputeAbstractClass
+from .base_precompute import BasePrecompute
 
 logger = logging.getLogger(__name__)
 
 
-class PrecomputeOrderbookDiffFeature(PrecomputeAbstractClass):
+class PrecomputeOrderbookDiffFeature(BasePrecompute):
 
     def process(self, data, level):
         # 1. Построить объемы по asks и bids

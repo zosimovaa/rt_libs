@@ -1,5 +1,6 @@
 """
-Модуль реализует функциональность тестового адаптера для биржи, для обучения.
+Классы для подключения к бирже полоник и обработке действий на ней.
+Еще не реализовано
 """
 import logging
 
@@ -9,7 +10,7 @@ from core.actions import TradeAction
 logger = logging.getLogger(__name__)
 
 
-class TestMarketProvider:
+class PoloniexMarketProvider:
     def __init__(self, context, market_fee=0.00155):
         self.context = context
         self.market_fee = market_fee

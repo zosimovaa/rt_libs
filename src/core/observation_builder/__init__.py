@@ -1,16 +1,8 @@
-# Реализации классов билдера для первой части задачи - для абстрактных операций.
-from .v0_abstract_builder import AbstractObservationBuilderSequencePrediction
-from .v0_abstract_builder import AbstractObservationBuilderCloseSignal
-from .v0_abstract_builder import AbstractObservationBuilderOpenSignal
-from .v0_abstract_builder import AbstractObservationBuilderCompleteTrade
+"""
+Classes which implements obserbaion building
+"""
+from .builder_1inp import ObservationBuilder1Inp
+from .builder_2inp import ObservationBuilder2Inp
 
-#from .v1_basic import ObservationBuilderBasic
-#from .v1_basic import ObservationBuilderBasicMultiRateSeparate
-#from core.observation_builder.deprecated.v1_with_trend_indicator import ObservationBuilderTrendIndicator
-
-#from .v3_orderbook_volumes import ObservationBuilderOrderbookTradeBalance
-
-from .v5_universal import ObservationBuilder2Dim
-
-
+from .builder_inputs import ObservationBuilderInput
 
