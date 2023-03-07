@@ -20,7 +20,7 @@ def logger_setup(log, alias, log_dir="logs"):
     # Step log
     full_path = os.path.join(log_path, alias + "_step" + '.log')
     fh_step = logging.FileHandler(full_path, mode='w')
-    fh_step.setLevel(logging.INFO)
+    fh_step.setLevel(logging.WARNING)
     fh_step.setFormatter(FORMATTER)
     log.addHandler(fh_step)  # set the new handler
 

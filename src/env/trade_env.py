@@ -54,10 +54,17 @@ class TradeEnv(gym.Env):
         return observation
 
     def step(self, action):
+
+
         reward, action_result = self.core.apply_action(action)
+
+        self.render()
 
         data_point, done = self.dp_factory.get_next_step()
         observation = self.core.get_observation(data_point)
+
+
+
         self.step_num = self.step_num + 1
 
         return observation, reward, done, self.step_info
@@ -70,7 +77,7 @@ class TradeEnv(gym.Env):
                       "Balance: {balance:>8.3f} | lowest_ask: {lowest_ask:>9.3f} | highest_bid: {highest_bid:>9.3f} |" \
                       " |---| {observation}"
             message = message.format(**self.step_info)
-            self.logger.info(message)
+            self.logger.warning(message)
 
     def log_episode_result(self, metrics):
         """Метод записывает данные в лог для оффлайн лог ридера"""
@@ -81,19 +88,19 @@ class TradeEnv(gym.Env):
     def get_step_info(self):
         """Метод записывает данные в лог для детального разбора того, что происходит"""
         if self.log_obs:
-            obs = obs_to_string(self.core.context.get("observation", domain="Data"))
+            obs = obs_to_string(self.core.context.get("observation"))
         else:
             obs = None
 
         step_info = {
             "cursor": self.core.context.get("ts"),
-            "state": self.core.context.get("is_open", default=False, domain="Trade"),
+            "state": self.core.context.get("is_open"),
             "observation": obs,
-            "action": self.core.context.get("action", domain="Action"),
-            "reward": self.core.context.get("reward", domain="Action"),
+            "action": self.core.context.get("action"),
+            "reward": self.core.context.get("reward"),
             "total_reward": self.core.metric_collector.get_metric("TotalReward"),
             "balance": self.core.metric_collector.get_metric("Balance"),
-            "profit": self.core.context.get("profit", domain="Trade"),
+            "profit": self.core.context.get("profit"),
             "lowest_ask": self.core.context.get("lowest_ask"),
             "highest_bid": self.core.context.get("highest_bid")
         }

@@ -34,10 +34,9 @@ class DataPointFactory:
         self.future_points = future_points
 
         # self.period = self.dataset.index[1] - self.dataset.index[0]
-        self.max_cursor = self.dataset.shape[0] - self.future_points
-        self.max_steps = self.max_cursor - self.offset
-        self.cursor = self.offset
-        self.done = True
+        self.max_cursor = self.dataset.shape[0] - self.future_points - 1 # -1 - т.к. индексация с нуля
+        self.max_steps = self.max_cursor - self.offset + 1
+        self.cursor = self.offset - 1
 
         self.reset()
 
@@ -47,13 +46,13 @@ class DataPointFactory:
 
         # Курсор устанавливается на значение, которое отстоит от начала так, чтобы от начала
         # до курсора был размер данных для одного датапоинта.
-        self.cursor = self.offset  # min(self.dataset.index) + self.period * (self.offset - 1)
+        self.cursor = self.offset - 1  # min(self.dataset.index) + self.period * (self.offset - 1)
         data_point = self.get_current_step()
         return data_point
 
     def get_current_step(self):
         """ Возвращает текущий data_point"""
-        data = self.dataset.iloc[self.cursor - self.offset : self.cursor + self.future_points, : ]
+        data = self.dataset.iloc[self.cursor : self.cursor + self.offset + self.future_points , : ]
 
         data_point = DataPoint(
             data,
@@ -69,8 +68,7 @@ class DataPointFactory:
 
         if self.cursor >= self.max_cursor:
             self.done = True
-        else:
-            self.done = False
+
 
         data_point = self.get_current_step()
         return data_point, self.done

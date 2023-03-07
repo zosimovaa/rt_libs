@@ -18,7 +18,7 @@ class TrainManager:
         self.train_plot = train_plot
         self.alias = alias
 
-    def go(self, agent, max_episodes=None, test_every=2):
+    def go(self, agent, max_episodes=None, test_every=2, update_every=10):
 
         current_episode = agent.episode_count
         test_episodes = list(range(current_episode + 1, max(max_episodes + 1, current_episode + 1)))
@@ -33,7 +33,7 @@ class TrainManager:
             if hasattr(agent, "episode_loss_history"):
                 step["train"]["Loss_mean"] = np.mean(agent.episode_loss_history)
 
-            if episode % test_every == 0:
+            if test_every is not None and episode % test_every == 0:
                 model = tf.keras.models.clone_model(agent.model)
                 model.set_weights(agent.model.get_weights())
                 model.compile()
@@ -45,7 +45,7 @@ class TrainManager:
                 step["model"] = model
 
             self.history.append(step)
-            if self.train_plot is not None:
+            if self.train_plot is not None and episode % update_every == 0:
                 self.train_plot.update_plot(self.history)
 
     def get_top_models_idx(self, n=1):

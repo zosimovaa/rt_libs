@@ -11,7 +11,7 @@ class Context:
         self.params[name] = value
 
     def get(self, name):
-        return self.params.get(name)
+        return self.params.get(name, 0)
 
     def set_dp(self, data_point):
         self.data_point = data_point
@@ -25,6 +25,15 @@ class Context:
                 value = 0
             finally:
                 self.set(key, value)
+
+        trade = self.params.get("trade")
+        if trade is not None and trade.is_open:
+            highest_bid = self.params.get("highest_bid")
+            profit = trade.get_profit(highest_bid)
+        else:
+            profit = 0
+        self.set("profit", profit)
+
 
 
 

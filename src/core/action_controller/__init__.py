@@ -4,3 +4,5 @@ from .train.action_controller_diff_reward import ActionControllerDiffReward
 
 #from .train.abstract_controller import AbstractTickerBasic, AbstractTickerOpenSignal, AbstractTickerCompleteTrade
 
+from .train.abstract_controller import AbstractSequencePrediction, AbstractCloseSignal, AbstractTickerOpenSignal, AbstractTickerCompleteTrade
+

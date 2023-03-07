@@ -94,12 +94,28 @@ class DQNAgent:
                 print(f"Key {key} not found in agent")
 
     def _sample_transformer(self, state):
-        """Работает для 2D сэмплов. Каждый элемент дополняет еще одной размерностью."""
-        return list(map(lambda p: np.expand_dims(p, 0), state))
+        """Работает для 1D и 2D сэмплов. Каждый элемент дополняет еще одной размерностью."""
+        if isinstance(state, list):
+            return list(map(lambda p: np.expand_dims(p, 0), state))
+        else:
+            return np.expand_dims(state, 0)
 
     def _batch_transformer(self, batch):
+        """работает для 1D и 2D батчей. После zip(*batch) получаем списки из фичей по размерностям"""
+        if isinstance(self.env.observation_space, list):
+            # multiple input
+            return list(map(np.array, zip(*batch)))
+        else:
+            shape = np.array(batch)[0].shape
+            output = np.array(batch).reshape(-1, *shape)
+        return output
+
+
+    def _batch_transformer0(self, batch):
         """работает для 2D батчей. После zip(*batch) получаем списки из фичей по размерностям"""
         return list(map(np.array, zip(*batch)))
+
+
 
     def _sample_transformer1(self, state):
         """
@@ -107,7 +123,7 @@ class DQNAgent:
         :return: state расширенной размерности
         """
         new_state = []
-        if isinstance(self.env.observation_space, list):
+        if isinstance(state, list):
             # multiple input
             for st in state:
                 st_tensor = tf.convert_to_tensor(st)

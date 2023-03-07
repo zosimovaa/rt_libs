@@ -31,10 +31,20 @@ class DataPoint:
         self.observation_len = observation_len
 
         # Верхушка observation = текущая точка данных
+        #print(f"data.shape[0] - {data.shape[0]}")
+        #print(f"self.offset - {self.offset}")
         self.cursor = data.shape[0] - self.offset - 1
+        #print(f"self.cursor - {self.cursor}")
+
+        #print(f"data.index.values - {data.index.values}")
+
         self.current_idx = data.index.values[self.cursor]
 
-        self.period = data.index[1] - data.index[0]
+
+        if observation_len > 1:
+            self.period = data.index[1] - data.index[0]
+        else:
+            self.period = 1
 
     def get_points(self, step_factor=1, num=None):
         """Возвращает индексы по реперным точкам - т.е. будет соответствовать количеству запрошенных точек"""

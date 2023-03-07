@@ -17,58 +17,30 @@ class AbstractSequencePrediction(BaseActionRouter):
     реакции на сигнал продажи.
     """
 
-    handler = {
-        0: "_action_waiting",
-        1: "_action_open_trade",
-        2: "_action_hold",
-        3: "_action_close_trade"
-    }
-
     def __init__(self, context, penalty=-1, reward=0):
-        self.context = context
+        super().__init__(context=context, penalty=penalty, reward=reward)
 
-        self.trade = None
-
-        self.penalty = penalty
-        self.reward = reward
-        logger.info("Initialized with penalty {0} and reward {1}.".format(penalty, reward))
-
-    def reset(self):
-        self.trade = None
-        logger.warning("Reset")
-
-    def apply_action(self, action):
-        ts = self.context.get("ts")
-        is_open = self.context.get("is_open", domain="Trade")
-        handler = getattr(self, self.handler[action])
-        reward, action_result = handler(ts, is_open)
-        return reward, action_result
-
-    def _get_penalty(self, val=None):
-        """Расчет штрафа. Если штрафне задан явно, то берем из базового значения"""
-        value = self.penalty if val is None else val
-        logger.debug("_get_penalty(): -> {0}".format(value))
-        return value
-
-    def _action_waiting(self, ts, is_open):
+    def _action_wait(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-            action_result = BadAction(self.context)
+            action_result = BadAction(ts, 0, is_open)
         else:
             reward = self.reward
             action_result = None
 
         return reward, action_result
 
-    def _action_open_trade(self, ts, is_open):
+    def _action_open(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-            action_result = BadAction(self.context)
+            action_result = BadAction(ts, 1, is_open)
         else:
             reward = self.reward
-            self.trade = AbstractTradeAction(self.context)
-            self.context.set_trade(self.trade)
+            self.trade = TradeAction(ts, 1, 0)
+            self.context.set("trade", self.trade)
+            self.context.set("is_open", True)
             action_result = self.trade
+
         return reward, action_result
 
     def _action_hold(self, ts, is_open):
@@ -77,119 +49,146 @@ class AbstractSequencePrediction(BaseActionRouter):
             action_result = None
         else:
             reward = self._get_penalty()
-            action_result = BadAction(self.context)
+            action_result = BadAction(ts, 2, is_open)
         return reward, action_result
 
-    def _action_close_trade(self, ts, is_open):
+    def _action_close(self, ts, is_open):
         if is_open:
-            self.trade.close()
+            self.trade.close(ts, 2)
+            self.context.set("is_open", False)
+            self.context.set("profit", self.trade.profit)
 
-            signal_value = self.context.get("highest_bid")
-
-            if signal_value > 0:
-                self.trade.profit = 1
-                self.context.set("profit", 1, domain="Trade")
-            else:
-                self.trade.profit = -1
-                self.context.set("profit", -1, domain="Trade")
-
-            reward = self.trade.profit
+            reward = 1
             action_result = self.trade
         else:
             reward = self._get_penalty()
-            action_result = BadAction(self.context)
+            action_result = BadAction(ts, 3, is_open)
         return reward, action_result
 
 
-class AbstractTickerOpenSignal(AbstractTickerBasic):
+class AbstractCloseSignal(AbstractSequencePrediction):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _action_close(self, ts, is_open):
+        if is_open:
+
+            self.trade.close(ts, 2)
+            self.context.set("is_open", False)
+            dp = self.context.data_point
+            signal_value = dp.get_value("close_signal")[0]
+
+            if signal_value > 0:
+                profit = 1
+            else:
+                profit = -1
+            self.trade.profit = profit
+            self.context.set("profit", profit)
+
+            reward = profit
+            action_result = self.trade
+        else:
+            reward = self._get_penalty()
+            action_result = BadAction(ts, 3, is_open)
+        return reward, action_result
+
+
+
+
+class AbstractTickerOpenSignal(AbstractSequencePrediction):
     """
     Класс реализует логику расчета награды для сценария обучения на сигнал покупки
     """
     def __init__(self, *args, **kwargs):
-        AbstractTickerBasic.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-    def _action_open_trade(self, ts, is_open):
+    def _action_open(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-            action_result = BadAction(self.context)
+            action_result = BadAction(ts, 1, is_open)
         else:
-
-            open_signal_value = self.context.get("lowest_ask")
+            dp = self.context.data_point
+            open_signal_value = dp.get_value("open_signal")[0]
             self.context.set("open_signal_value", open_signal_value)
 
             reward = self.reward
-            self.trade = AbstractTradeAction(self.context)
-            self.context.set_trade(self.trade)
+            self.trade = TradeAction(ts, 1, 0)
+            self.context.set("trade", self.trade)
+            self.context.set("is_open", True)
             action_result = self.trade
 
         return reward, action_result
 
-    def _action_close_trade(self, ts, is_open):
+    def _action_close(self, ts, is_open):
         if is_open:
-            self.trade.close()
+            self.trade.close(ts, 2)
+            self.context.set("is_open", False)
 
-            # -------------------------
-            # Блок для 'прямого' датасета, где 1 - признак покупки
-            open_signal = self.context.get("open_signal_value")
-            if open_signal == 1:
-                self.trade.profit = 1
-                self.context.set("profit", 1, domain="Trade")
+            signal_value = self.context.get("open_signal_value")
+
+            if signal_value > 0:
+                profit = 1
             else:
-                self.trade.profit = -1
-                self.context.set("profit", -1, domain="Trade")
-            # -------------------------
+                profit = -1
+            self.trade.profit = profit
+            self.context.set("profit", profit)
 
-            reward = self.trade.profit
+            reward = profit
             action_result = self.trade
-
         else:
             reward = self._get_penalty()
-            action_result = BadAction(self.context)
+            action_result = BadAction(ts, 3, is_open)
         return reward, action_result
 
 
-class AbstractTickerCompleteTrade(AbstractTickerBasic):
+class AbstractTickerCompleteTrade(AbstractSequencePrediction):
     """
     Класс реализует логику расчета награды для сценария обучения на сигналы покупки и продажи.
     """
     def __init__(self, *args, **kwargs):
-        AbstractTickerBasic.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-    def _action_open_trade(self, ts, is_open):
+    def _action_open(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
-            action_result = BadAction(self.context)
+            action_result = BadAction(ts, 1, is_open)
         else:
-
-            open_signal_value = self.context.get("lowest_ask")
+            dp = self.context.data_point
+            open_signal_value = dp.get_value("open_signal")[0]
             self.context.set("open_signal_value", open_signal_value)
 
             reward = self.reward
-            self.trade = AbstractTradeAction(self.context)
-            self.context.set_trade(self.trade)
+            self.trade = TradeAction(ts, 1, 0)
+            self.context.set("trade", self.trade)
+            self.context.set("is_open", True)
             action_result = self.trade
 
         return reward, action_result
 
-    def _action_close_trade(self, ts, is_open):
+    def _action_close(self, ts, is_open):
         if is_open:
-            self.trade.close()
+            self.trade.close(ts, 2)
+            self.context.set("is_open", False)
 
             # -------------------------
             # Блок для 'прямого' датасета, где 1 - признак покупки/продажи
+
+            dp = self.context.data_point
+            close_signal = dp.get_value("close_signal")[0]
             open_signal = self.context.get("open_signal_value")
-            close_signal = self.context.get("highest_bid")
 
             if open_signal > 0 and close_signal > 0:
-                self.trade.profit = 1
-                self.context.set("profit", 1, domain="Trade")
+                profit = 1
             else:
-                self.trade.profit = -1
-                self.context.set("profit", -1, domain="Trade")
+               profit = -1
             # -------------------------
 
-            reward = self.trade.profit
+            self.trade.profit = profit
+            self.context.set("profit", profit)
+
+            reward = profit
             action_result = self.trade
+
         else:
             reward = self._get_penalty()
             action_result = BadAction(self.context)

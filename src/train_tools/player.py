@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import tensorflow as tf
 from core.actions import BadAction, TradeAction
-
+import numpy as np
 
 class Player:
 
@@ -26,6 +26,12 @@ class Player:
 
         self.play_log = []
 
+    def _sample_transformer(self, state):
+        if isinstance(state, list):
+            return list(map(lambda p: np.expand_dims(p, 0), state))
+        else:
+            return np.expand_dims(state, 0)
+
     def play(self, fig_size_x=13, fig_size_y=5, dpi=50, font_size=20, render=True, close_last=True):
         self.fig_size_x = fig_size_x
         self.fig_size_y = fig_size_y
@@ -43,7 +49,8 @@ class Player:
 
         step = 1
         while not done:
-            obs_transformed = [tf.expand_dims(tf.convert_to_tensor(obs), 0) for obs in observation]
+            #obs_transformed = [tf.expand_dims(tf.convert_to_tensor(obs), 0) for obs in observation]
+            obs_transformed = self._sample_transformer(observation)
             action = self.model(obs_transformed)
 
             action = tf.argmax(action[0]).numpy()
