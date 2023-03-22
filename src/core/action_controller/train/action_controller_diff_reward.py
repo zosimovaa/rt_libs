@@ -126,7 +126,7 @@ class ActionControllerDiffReward(BaseActionRouter):
         return result
 
 
-class ActionControllerProfitReward(ActionControllerDiffReward):
+class ActionControllerNegativeProfitReward(ActionControllerDiffReward):
     def _action_wait(self, ts, is_open):
         if is_open:
             reward = self._get_penalty()
@@ -134,13 +134,29 @@ class ActionControllerProfitReward(ActionControllerDiffReward):
         else:
             self.opposite_trade = self.context.get("trade", domain="OppositeTrade")
             profit = self.opposite_trade.get_profit()
-            reward =  profit * self.scale_wait
+            if profit >= 0:
+                reward = 0
+            else:
+                # Инверсируем профит, т.к. операция закрыта и при росте курса надо дать отрицательную награду
+                reward = -profit * self.scale_wait
+                # Добавляем ограничение, т.к. в этой реализации штрафуем агента только при нехождении не в том состоянии
+                reward = min(0, reward)
+
             action_result = None
         return reward, action_result
 
     def _action_hold(self, ts, is_open):
         if is_open:
             profit = self.context.trade.get_profit()
+
+            if profit >= 0:
+                reward = 0
+            else:
+                # Награду не инверсируем. Ибо есть открытая операция.
+                reward = profit * self.scale_wait
+                # Так же передаем агенту только негативную награу.
+                reward = min(0, reward)
+
             reward = profit * self.scale_hold
             action_result = None
         else:
