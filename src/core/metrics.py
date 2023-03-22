@@ -1,3 +1,7 @@
+"""
+Модуль реализует класс для сбора метрик из core.
+
+"""
 import logging
 
 from core.actions import BadAction, TradeAction
@@ -9,14 +13,19 @@ logger = logging.getLogger(__name__)
 
 class MetricCollector:
     """Собирает статистику по процессу торгов"""
-    BASIC_METRICS = ["Trades", "TotalReward", "Balance", "Penalties", "Rewards", "PosTrades", "NegTrades"]
+    BASIC_METRICS = ["Trades", "TotalReward", "Balance", "Penalties", "Rewards", "PosTrades", "NegTrades", "StepsOpened", "StepsClosed"]
 
-    def __init__(self, enabled=True):
+    def __init__(self):
         self.metrics = dict()
         self.reset()
 
-    def process(self, reward, action_result):
+    def process(self, reward, action_result, is_open):
         self.save_metric("TotalReward", val=reward)
+
+        if is_open:
+            self.save_metric("StepsOpened")
+        else:
+            self.save_metric("StepsClosed")
 
         if isinstance(action_result, BadAction):
             self.save_metric("Penalties")
