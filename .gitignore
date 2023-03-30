@@ -37,3 +37,11 @@ src/core/observation_builder/precompute/__pycache__
 src/core/action_controller/train/__pycache__
 src/core/action_controller/__pycache__
 src/core/__pycache__
+src/train_tools/train_plot/__pycache__/__init__.cpython-39.pyc
+src/train_tools/train_plot/__pycache__/train_plot_mpl.cpython-39.pyc
+src/train_tools/train_plot/__pycache__/train_plot_plotly.cpython-39.pyc
+src/train_tools/train_manager/__pycache__/__init__.cpython-39.pyc
+src/train_tools/train_manager/__pycache__/checkpoint.cpython-39.pyc
+src/train_tools/train_manager/__pycache__/tm2.cpython-39.pyc
+src/train_tools/train_manager/__pycache__/train_manager.cpython-39.pyc
+src/train_tools/train_plot/__pycache__/train_plot_plotly_refactor.cpython-39.pyc
