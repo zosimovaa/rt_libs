@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class RTCore:
     COLLECT_METRICS = True
+
     """Implementation of a trainer with a basic set of features."""
     def __init__(self, context, action_controller, observation):
         self.context = context
@@ -50,9 +51,11 @@ class RTCore:
     def apply_action(self, action):
         self.context.set("action", action)
         reward, action_result = self.action_controller.apply_action(action)
+
         self.context.set("reward", reward)
         if self.COLLECT_METRICS:
-            self.metric_collector.process(reward, action_result)
+            is_open = self.context.get("is_open")
+            self.metric_collector.process(reward, action_result, is_open)
         return reward, action_result
 
     #@with_exception(RTCoreError)
