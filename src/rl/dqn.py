@@ -1,3 +1,8 @@
+"""
+Реализация DQN-агента.
+В этой верси все обновления (тренировка сети, параметры алгоритма) привязаны в эпизодаам, а не ко фреймам.
+
+"""
 import time
 import copy
 import random
@@ -81,8 +86,13 @@ class DQNAgent:
         self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
 
     def get_config(self):
-        config = copy.deepcopy(self.__dict__)
-        del config["optimizer"]
+        keys = self.__dict__.keys()
+        config = {}
+        for key in keys:
+            if key in ("model", "model_target", "optimizer"):
+                continue
+            else:
+                config[key] = getattr(self, key)
         return config
 
     def load_config(self, config):
@@ -110,47 +120,6 @@ class DQNAgent:
             output = np.array(batch).reshape(-1, *shape)
         return output
 
-
-    def _batch_transformer0(self, batch):
-        """работает для 2D батчей. После zip(*batch) получаем списки из фичей по размерностям"""
-        return list(map(np.array, zip(*batch)))
-
-
-
-    def _sample_transformer1(self, state):
-        """
-        :param state: текущий стейт может быть np.ndarray или list. Если list - значит работаем с multiple input
-        :return: state расширенной размерности
-        """
-        new_state = []
-        if isinstance(state, list):
-            # multiple input
-            for st in state:
-                st_tensor = tf.convert_to_tensor(st)
-                st_tensor = tf.expand_dims(st_tensor, 0)
-                new_state.append(st_tensor)
-        else:
-            # single input
-            new_state = tf.convert_to_tensor(state)
-            new_state = tf.expand_dims(new_state, 0)
-        return new_state
-
-    def _batch_transformer1(self, samples):
-        """Текущий стейт может быть np.ndarray или list. Если list - значит работаем с multiple input"""
-        n = len(samples)
-        output = []
-        if isinstance(self.env.observation_space, list):
-            # multiple input
-            for i in range(len(samples[0])):
-                shape = np.array(samples)[:, i][0].shape
-                sample = np.vstack(np.array(samples)[:, i]).reshape(n, *shape)
-                output.append(sample)
-        else:
-            # single input
-            shape = np.array(samples)[0].shape
-            new_shape = [n, *shape]
-            output = np.array(samples).reshape(new_shape)
-        return output
 
     def reset(self):
         pass
