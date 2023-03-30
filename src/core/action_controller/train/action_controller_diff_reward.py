@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class ActionControllerDiffReward(BaseActionRouter):
     """Класс реализует логику расчета награды/штрафа за действия.
-    Базовая версия - награда из профита выдается только при закрытии.
+    Базовая версия -
 
     OPEN - без награды (награда (профит) от OppositeTrade явно не улучшает ситуацию, надо исследовать)
     CLOSE - награда в виде профита
@@ -43,7 +43,6 @@ class ActionControllerDiffReward(BaseActionRouter):
         self.trade = None
         self.context.set("trade", self.trade)
         self.context.set("is_open", False)
-
         self.context.set("market_fee", self.market_fee)
 
         ts = self.context.get("ts")
@@ -53,47 +52,49 @@ class ActionControllerDiffReward(BaseActionRouter):
 
     def _action_wait(self, ts, is_open):
         if is_open:
+            # Wrong action, penalty
             reward = self._get_penalty()
             action_result = BadAction(ts, 0, is_open)
         else:
-            if self.scale_wait == 0:
-                # так быстрее
-                reward = 0
-            else:
+            # так быстрее
+            if self.scale_wait:
+                # минут добавляется т.к. при росте курса в отсутствии открытой операции нужно дать штраф.
                 reward = -self._get_diff_reward() * self.scale_wait
-
+            else:
+                reward = 0
             action_result = None
         return reward, action_result
 
     def _action_open(self, ts, is_open):
         if is_open:
+            # Wrong action, penalty
             reward = self._get_penalty()
             action_result = BadAction(ts, 1, is_open)
         else:
+            # Close opposite trade
+            highest_bid = self.context.get("highest_bid")
+            self.opposite_trade.close(ts, highest_bid)
+
+            # Open trade
             open_price = self.context.get("lowest_ask")
             self.trade = TradeAction(ts, open_price, self.market_fee)
             self.context.set("trade", self.trade)
             self.context.set("is_open", True)
             action_result = self.trade
 
-            if self.scale_open == 0:
-                reward = 0
-            else:
-                # Закрыть opposite_trade и рассчитать награду
-                highest_bid = self.context.get("highest_bid")
-                profit = self.opposite_trade.get_profit(highest_bid)
-                self.opposite_trade.close(ts, highest_bid)
-                reward = -profit * self.scale_open
+            # Calculate reward
+            reward = -self.opposite_trade.profit * self.scale_open
         return reward, action_result
 
     def _action_hold(self, ts, is_open):
         if is_open:
-            if self.scale_hold == 0:
-                reward = 0
-            else:
+            if self.scale_hold:
                 reward = self._get_diff_reward() * self.scale_hold
+            else:
+                reward = 0
             action_result = None
         else:
+            # Wrong action, penalty
             reward = self._get_penalty()
             action_result = BadAction(ts, 2, is_open)
         return reward, action_result
@@ -108,6 +109,7 @@ class ActionControllerDiffReward(BaseActionRouter):
             self.context.set("is_open", False)
             self.opposite_trade = TradeAction(ts, highest_bid, self.market_fee)
         else:
+            # Wrong action, penalty
             reward = self._get_penalty()
             action_result = BadAction(ts, 3, is_open)
         return reward, action_result
@@ -132,15 +134,14 @@ class ActionControllerNegativeProfitReward(ActionControllerDiffReward):
             reward = self._get_penalty()
             action_result = BadAction(self.context)
         else:
-            self.opposite_trade = self.context.get("trade", domain="OppositeTrade")
-            profit = self.opposite_trade.get_profit()
-            if profit >= 0:
-                reward = 0
-            else:
-                # Инверсируем профит, т.к. операция закрыта и при росте курса надо дать отрицательную награду
+
+            if self.scale_wait:
+                highest_bid = self.context.get("highest_bid")
+                profit = self.opposite_trade.get_profit(highest_bid)
                 reward = -profit * self.scale_wait
-                # Добавляем ограничение, т.к. в этой реализации штрафуем агента только при нехождении не в том состоянии
                 reward = min(0, reward)
+            else:
+                reward = 0
 
             action_result = None
         return reward, action_result
