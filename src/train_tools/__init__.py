@@ -12,4 +12,4 @@ from .progress_keeper import ProgressKeeper
 
 #from .train_plot import TrainPlot
 
-from .train_manager import TrainManager
+from .train_manager.train_manager import TrainManager

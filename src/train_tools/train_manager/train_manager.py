@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import os
 
-from .player import Player
+from train_tools.player import Player
 
 
 class TrainManager:
@@ -141,7 +141,15 @@ class TrainManager:
             penalties = self.history[idx]["test"]["Penalties"]
             total_reward = self.history[idx]["test"]["TotalReward"]
 
+            steps_opened = self.history[idx]["test"].get("StepsOpened", 0)
+            steps_closed = self.history[idx]["test"].get("StepsClosed", 1)
+
+            sparsity = steps_opened / (steps_opened + steps_closed)
+
             print(
-                f"Profit: {balance:<6.2%} | id: {idx:<4} | Penalties: {penalties:<4} | TotalReward: {total_reward:<7.2f}")
+                f"Profit: {balance:<6.2%} | id: {idx:<4} | "
+                f"Penalties: {penalties:<4} | TotalReward: {total_reward:<7.2f}"
+                f"Sparsity {sparsity:<3.2f}"
+            )
 
 
