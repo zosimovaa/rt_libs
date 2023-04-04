@@ -1,1 +1,1 @@
-from .tm2 import TrainManager2
+from .train_manager import TrainManager
