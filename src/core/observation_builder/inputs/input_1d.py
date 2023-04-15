@@ -11,5 +11,8 @@ class Input1D(BaseInput):
 
     def get(self):
         data = [feat.get() for feat in self.features]
-        data = np.concatenate(data, dtype=np.float32, axis=0)
-        return data
+        #data = np.concatenate(data, dtype=np.float32, axis=0)
+        #return data
+
+        data = np.concatenate(data, axis=0)
+        return np.array(data, dtype=np.float32)
