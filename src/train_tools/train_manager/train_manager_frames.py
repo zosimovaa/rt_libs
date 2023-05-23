@@ -169,7 +169,7 @@ class TrainManagerFrames:
         _, steps_closed = self.history.get_data("test", "StepsClosed")
 
         for top_score_idx in top_scores:
-            idx = idxs[top_score_idx]
+            idx = frames[top_score_idx]
             sparsity = steps_opened[top_score_idx] / (steps_opened[top_score_idx] + steps_closed[top_score_idx])
             print(
                 f"Profit: {balances[top_score_idx]:<6.2%} | id: {idx:<4} | "
