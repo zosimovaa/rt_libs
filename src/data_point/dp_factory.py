@@ -17,7 +17,7 @@ class DataPointFactoryError(Exception):
 
 
 class DataPointFactory:
-    def __init__(self, dataset, step_size=1, offset=10, observation_len=10, future_points=0):
+    def __init__(self, dataset, step_size=1, offset=10, observation_len=10, future_points=0, alias=None):
         """
         Все параметры указываются в единицах, без привязки к шагу датасета
         :param dataset: pandas dataframe с данными
@@ -33,6 +33,7 @@ class DataPointFactory:
         self.observation_len = observation_len
         self.future_points = future_points
         self.done = False
+        self.alias = alias
 
         # self.period = self.dataset.index[1] - self.dataset.index[0]
         self.max_cursor = self.dataset.shape[0] - self.future_points - 1 # -1 - т.к. индексация с нуля
