@@ -45,3 +45,5 @@ src/train_tools/train_manager/__pycache__/checkpoint.cpython-39.pyc
 src/train_tools/train_manager/__pycache__/tm2.cpython-39.pyc
 src/train_tools/train_manager/__pycache__/train_manager.cpython-39.pyc
 src/train_tools/train_plot/__pycache__/train_plot_plotly_refactor.cpython-39.pyc
+src/train_tools/train_manager/__pycache__
+src/train_tools/train_plot/__pycache__
