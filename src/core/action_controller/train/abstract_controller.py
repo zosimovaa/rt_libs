@@ -93,8 +93,6 @@ class AbstractCloseSignal(AbstractSequencePrediction):
         return reward, action_result
 
 
-
-
 class AbstractTickerOpenSignal(AbstractSequencePrediction):
     """
     Класс реализует логику расчета награды для сценария обучения на сигнал покупки

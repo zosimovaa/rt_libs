@@ -40,7 +40,7 @@ class BaseActionRouter:
         return reward, action_result
 
     def _get_penalty(self, val=None):
-        """Расчет штрафа. Если штрафне задан явно, то берем из базового значения"""
+        """Расчет штрафа. Если штраф не задан явно, то берем из базового значения"""
         value = self.penalty if val is None else val
         return value
 

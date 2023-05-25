@@ -1,6 +1,6 @@
 """
 Реализация DQN-агента.
-В этой верси все обновления (тренировка сети, параметры алгоритма) привязаны к фреймам.
+В этой верси все обновления (тренировка сети, параметры алгоритма) привязаны в эпизодаам, а не ко фреймам.
 
 """
 import time
@@ -15,47 +15,8 @@ import tensorflow as tf
 logger = logging.getLogger(__name__)
 
 
-
-class GreedyAgent:
-    """Класс скрывает в себе логику расчета epsilon в жадной политике обученяи агента"""
-    def __init__(self):
-
-        # Number of frames for exploration
-        self.epsilon_random_frames = 5000
-        self.__epsilon_greedy_frames = 100000
-
-        # Epsilon greedy parameter
-        self.epsilon = 1
-        self.__epsilon_min = 0.01  # Minimum epsilon greedy parameter
-        self.epsilon_decay = self.__get_decay()
-
-    @property
-    def epsilon_greedy_frames(self):
-        return self.__epsilon_greedy_frames
-
-    @epsilon_greedy_frames.setter
-    def epsilon_greedy_frames(self, value):
-        self.__epsilon_greedy_frames = value
-        self.epsilon_decay = self.__get_decay()
-
-    @property
-    def epsilon_min(self):
-        return self.__epsilon_min
-
-    @epsilon_min.setter
-    def epsilon_min(self, value):
-        self.__epsilon_min = value
-        self.epsilon_decay = self.__get_decay()
-
-    def __get_decay(self):
-        return (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
-
-
-class DQNAgentFrame(GreedyAgent):
-    EXPORT_FORBIDDEN_ATTRIBUTES = ("model", "model_target", "optimizer")
-
+class DQNAgent:
     def __init__(self, env, model, model_target):
-        super().__init__()
         self.env = env
         self.model = model
         self.model_target = model_target
@@ -66,14 +27,22 @@ class DQNAgentFrame(GreedyAgent):
         # decay or discount rate: enables agent to take into account future actions in addition to the immediate ones, but discounted at this rate
         self.gamma = 0.99
 
+        # Number of frames for exploration
+        self._epsilon_greedy_frames = 100000
+        self.epsilon_random_frames = 5000
         self.max_memory_length = 100000
+
+        # Epsilon greedy parameter
+        self.epsilon = 1
+        self._epsilon_min = 0.01  # Minimum epsilon greedy parameter
+        self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
 
         # # Experience replay params and buffers
         self.batch_size = 32
         self.update_after_actions = 4
 
-        # update every N frames
-        self.update_target_network = 1000
+        # update every N episodes
+        self.update_target_network = 2
 
         self.action_history = []
         self.state_history = []
@@ -87,8 +56,6 @@ class DQNAgentFrame(GreedyAgent):
         self.episode_reward = 0
         self.frame_count = 0
         self.running_reward = 0
-        self.running_loss = 0
-        self.episode_loss = []
 
         self.max_reward_length = 30
         self.episode_reward_history = deque(maxlen=self.max_reward_length)
@@ -97,18 +64,32 @@ class DQNAgentFrame(GreedyAgent):
         # self.learning_rate = 0.00012  # rate at which NN adjusts models parameters via SGD to reduce cost
         self.loss_function = None
         self.optimizer = None
-        self.new_episode = True
-
-        self.state = None
 
         np.random.seed(0)
 
+    @property
+    def epsilon_greedy_frames(self):
+        return self._epsilon_greedy_frames
+
+    @epsilon_greedy_frames.setter
+    def epsilon_greedy_frames(self, value):
+        self._epsilon_greedy_frames = value
+        self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
+
+    @property
+    def epsilon_min(self):
+        return self._epsilon_min
+
+    @epsilon_min.setter
+    def epsilon_min(self, value):
+        self._epsilon_min = value
+        self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.epsilon_greedy_frames
 
     def get_config(self):
         keys = self.__dict__.keys()
         config = {}
         for key in keys:
-            if key in self.EXPORT_FORBIDDEN_ATTRIBUTES:
+            if key in ("model", "model_target", "optimizer"):
                 continue
             else:
                 config[key] = getattr(self, key)
@@ -209,70 +190,72 @@ class DQNAgentFrame(GreedyAgent):
             q_action = tf.reduce_sum(tf.multiply(q_values, masks), axis=1)
             # Calculate loss between new Q-value and old Q-value
             loss = self.loss_function(updated_q_values, q_action)
-            self.episode_loss.append(loss)
+            self.episode_loss_history.append(loss)
 
         # Backpropagation
         grads = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
-
-
-
-    def train(self, goal_reward=None, max_frames=None):
-
+    def train(self, goal_reward=None, max_frames=None, max_episodes=None):
         while True:
-            self.frame_count += 1
+            self.episode_start = time.time()
+            self.episode_loss_history = []
+            self.episode_reward = 0
+            self.episode_count += 1
 
-            if self.new_episode:
-                self.new_episode = False
+            # reset state at start of each new episode of the game
+            state = self.env.reset()
 
-                self.episode_start = time.time()
-                self.episode_loss = []
-                self.episode_reward = 0
-                self.episode_count += 1
+            # env work cycle start
+            for frame in range(self.max_steps_per_episode):  # time represents a frame of the game; goal is to keep pole upright as long as possible up to range, e.g., 500 or 5000 timesteps
+                self.frame_count += 1
 
-                # reset state at start of each new episode of the game
-                self.state = self.env.reset()
+                # env.render()
+                action = self.act(state)
 
-            # env.render()
-            action = self.act(self.state)
+                # Apply the sampled action in our environment
+                next_state, reward, done, _ = self.env.step(action)
+                self.episode_reward += reward
 
-            # Apply the sampled action in our environment
-            next_state, reward, done, _ = self.env.step(action)
-            self.episode_reward += reward
+                # Save actions and states in replay buffer
+                self.remember(state, action, reward, next_state, done)
+                state = next_state
 
-            # Save actions and states in replay buffer
-            self.remember(self.state, action, reward, next_state, done)
-            self.state = next_state
+                # Update every N frame and batch size is enough
+                if len(self.done_history) > self.batch_size and self.frame_count % self.update_after_actions == 0:
+                    self.replay()
 
-            # Update every N frame and batch size is enough
-            if len(self.done_history) > self.batch_size and self.frame_count % self.update_after_actions == 0:
-                self.replay()
+                if done:
+                    break
+            # env work cycle end
+
+            # Update running reward to check condition for solving
+            self.episode_reward_history.append(self.episode_reward)
+            self.running_reward = np.mean(self.episode_reward_history)
+
+            # print episode results
+            print(self.get_episode_message())
 
             # Update target network every N episodes
-            if self.frame_count % self.update_target_network == 0:
+            if self.episode_count % self.update_target_network == 0:
                 self.model_target.set_weights(self.model.get_weights())
-                message = f"{datetime.now().strftime('%H:%M:%S')} Running reward: {self.running_reward:<8.2f} " \
-                  f"at episode {self.episode_count:<4} | frame {self.frame_count:<6} | " \
-                  f"eps: {self.epsilon:<4.2f} | Running loss: {self.running_loss:.5f}"
-                print(message)
 
-            if done:
-                # episode is done
-                self.new_episode = True
-
-                # Update running reward to check condition for solving
-                self.episode_reward_history.append(self.episode_reward)
-                self.running_reward = np.mean(self.episode_reward_history)
-
-                self.episode_loss_history.append(np.mean(self.episode_loss))
-                self.running_loss = np.mean(self.episode_loss_history)
-
+            # Stop criteria
+            if goal_reward is not None and self.running_reward >= goal_reward:  # Condition to consider the task solved
                 break
-                # Stop criteria
-                #if goal_reward is not None and self.running_reward >= goal_reward:  # Condition to consider the task solved
-                #    print(f"Done with reward {self.running_reward} at frame {self.frame_count}")
-                #    break
 
             if max_frames is not None and self.frame_count >= max_frames:
                 break
+
+            if max_episodes is not None and self.episode_count >= max_episodes:
+                break
+
+    def get_episode_message(self):
+        tm_now = datetime.now().strftime("%H:%M:%S")
+        episode_duration = time.time() - self.episode_start
+        loss_mean = np.mean(self.episode_loss_history)
+
+        message = f"{tm_now} ({episode_duration:<4.1f} sec) | reward: {self.episode_reward:<8.2f} " \
+                  f"at episode {self.episode_count:<4} | frame {self.frame_count:<6} | " \
+                  f"eps: {self.epsilon:<4.2f} | loss: {loss_mean:.5f}"
+        return message
