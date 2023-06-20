@@ -4,7 +4,29 @@ import os
 
 from train_tools.player import Player
 
-from .snapshot_lord import SnapshotLord
+from train_tools.train_manager.snapshot_lord import SnapshotLord
+
+
+class ResultsBuffer:
+    def __init__(self):
+        self.data = {}
+
+    def save_stat(self, name, frame, score):
+        if name not in self.data:
+            self.data[name] = []
+        self.data[name].append((frame, score))
+
+    def get_data(self, name, metric):
+        records = self.data.get(name)
+        if records is not None:
+            idxs, data = zip(*records)
+            score = [step[metric] for step in data]
+        else:
+            idxs, score = [], []
+        return idxs, score
+
+    def get_aliases(self):
+        return self.data.keys()
 
 
 class TrainManager:
@@ -15,57 +37,87 @@ class TrainManager:
     MODELS_DIR = "models"
     TRADE_SETUP_DIR = "trade_setups"
 
+    ALIAS_TRAIN = "train"
+    ALIAS_TEST = "test"
+
     def __init__(self, agent, core, dpf, train_plot=None, alias="AliasTest"):
         self.core = core
         self.dpf = dpf
-        self.history = []
+        self.history = ResultsBuffer()
         self.train_plot = train_plot
         self.alias = alias
         self.agent = agent
         self.snapshot_lord = SnapshotLord([self.WORK_PATH, alias])
 
-    def go(self, max_episodes=100, test_every=2, update_every=10, snapshot_every=100, save_since=0.):
-        current_episode = self.agent.episode_count
-        test_episodes = list(range(current_episode + 1, max(max_episodes + 1, current_episode + 1)))
+    @staticmethod
+    def get_stop_frames(current_frame, max_frames, stop_frame):
+        stop_frames = list(
+            range(
+                max(stop_frame, int(np.ceil(current_frame / stop_frame) * stop_frame)),
+                max(max_frames + 1, current_frame + 1),
+                stop_frame
+            )
+        )
+        return stop_frames
 
-        # Основной цикл
-        for episode in test_episodes:
-            self.agent.train(max_episodes=episode)
+    def go(self, max_frames=100000, test_every=5000, update_plot_every=5000, snapshot_every=100000, save_since=0.05):
+        current_frame = self.agent.frame_count
 
-            step = {}
-            step["episode"] = episode
-            step["train"] = self.agent.env.core.get_metrics()
-            if hasattr(self.agent, "episode_loss_history"):
-                step["train"]["Loss_mean"] = np.mean(self.agent.episode_loss_history)
+        test_frames = self.get_stop_frames(current_frame, max_frames, test_every)
+        snapshot_frames = self.get_stop_frames(current_frame, max_frames, snapshot_every)
+        update_plot_frames = self.get_stop_frames(current_frame, max_frames, update_plot_every)
 
-            if test_every is not None and episode % test_every == 0:
-                model = tf.keras.models.clone_model(self.agent.model)
-                model.set_weights(self.agent.model.get_weights())
-                model.compile()
+        test_frames = sorted(set(test_frames + snapshot_frames + update_plot_frames))
 
-                player = Player(self.core, model, self.dpf)
+        max_frame = test_frames.pop(0)
+        while True:
+            self.agent.train(max_frames=max_frame)
+            frame = self.agent.frame_count
+
+            # Проверяем и сохраняем в результат на тренировочном датасете
+            if self.agent.new_episode:
+                score = self.agent.env.core.get_metrics()
+                self.history.save_stat(self.ALIAS_TRAIN, frame, score)
+
+            # Проверяем и сохраняем в результат на тестовых датасетах
+            if frame % test_every == 0:
+                player = Player(self.core, self.agent.model, self.dpf)
                 score, play_log = player.play(render=False)
+                self.history.save_stat(self.ALIAS_TEST, frame, score)
 
-                step["test"] = score
+            # Сохраняем модель
+            aliases = self.history.get_aliases()
+            balances = []
+            for alias in aliases:
+                frames, scores = self.history.get_data(alias, "Balance")
+                balances.append(scores[-1])
 
-                if score["Balance"] > save_since:
-                    self.save_model(self.agent.model, episode)
+            if np.mean(balances) > save_since:
+                self.save_model(self.agent.model, frame)
 
-            self.history.append(step)
+            # Делаем снепшот
+            if frame % snapshot_every == 0:
+                self.make_snapshot(str(frame))
 
-            if self.train_plot is not None and episode % snapshot_every == 0:
-                self.make_snapshot(str(episode))
-
-            if self.train_plot is not None and episode % update_every == 0:
+            # Обновляем график
+            if self.train_plot is not None and frame % update_plot_every == 0:
                 self.train_plot.update_plot(self.history)
+
+            # Проверяем условие выхода
+            if frame >= max_frame:
+                if len(test_frames):
+                    max_frame = test_frames.pop(0)
+                else:
+                    print("done")
+                    break
 
     def get_model(self, idx):
         local_path = [self.MODELS_DIR]
         return self.snapshot_lord.load_model(local_path, str(idx))
 
-    def save_model(self, model, episode):
+    def save_model(self, model, frame):
         local_path = [self.MODELS_DIR]
-        self.snapshot_lord.save_model(local_path, str(episode), model)
+        self.snapshot_lord.save_model(local_path, str(frame), model)
 
     def make_trade_config(self, params, model_id, suffix=None):
 
@@ -108,26 +160,19 @@ class TrainManager:
 
     def get_train_stat(self, top_n=20):
 
-        idxs = list(range(len(self.history)))
-        scores = [self.history[idx]["test"]["Balance"] for idx in idxs]
+        frames, balances = self.history.get_data("test", "Balance")
+        top_scores = np.flip(np.argsort(balances))[:top_n]
 
-        top_scores = np.flip(np.argsort(scores))[:top_n]
+        _, penalties = self.history.get_data("test", "Penalties")
+        _, total_rewards = self.history.get_data("test", "TotalReward")
+        _, steps_opened = self.history.get_data("test", "StepsOpened")
+        _, steps_closed = self.history.get_data("test", "StepsClosed")
 
         for top_score_idx in top_scores:
-            idx = idxs[top_score_idx]
-
-            episode = self.history[idx]["episode"]
-            balance = self.history[idx]["test"]["Balance"]
-            penalties = self.history[idx]["test"]["Penalties"]
-            total_reward = self.history[idx]["test"]["TotalReward"]
-
-            steps_opened = self.history[idx]["test"].get("StepsOpened", 0)
-            steps_closed = self.history[idx]["test"].get("StepsClosed", 1)
-
-            sparsity = steps_opened / (steps_opened + steps_closed)
-
+            idx = frames[top_score_idx]
+            sparsity = steps_opened[top_score_idx] / (steps_opened[top_score_idx] + steps_closed[top_score_idx])
             print(
-                f"Profit: {balance:<6.2%} | id: {episode:<4} | "
-                f"Penalties: {penalties:<4} | TotalReward: {total_reward:<9.2f}"
+                f"Profit: {balances[top_score_idx]:<6.2%} | id: {idx:<4} | "
+                f"Penalties: {penalties[top_score_idx]:<4} | TotalReward: {total_rewards[top_score_idx]:<9.2f}"
                 f"Sparsity {sparsity:<3.2f}"
             )

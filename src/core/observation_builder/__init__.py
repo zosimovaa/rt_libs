@@ -1,5 +1,5 @@
 """
-Classes which implements obserbaion building
+Package implements different types of observaion builders
 """
 from .builder_1inp import ObservationBuilder1Inp
 from .builder_2inp import ObservationBuilder2Inp

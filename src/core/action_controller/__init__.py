@@ -1,8 +1,5 @@
 from .base_action_router import BaseActionRouter
-from .train.action_controller_diff_reward import ActionControllerDiffReward
-#from .train.action_controller_diff_reward import ActionControllerProfitReward
+#from .train.action_controller_diff_reward import ActionControllerDiffReward
+#from .train.action_controller_diff_reward_3a import ActionControllerDiffReward3A
 
-#from .train.abstract_controller import AbstractTickerBasic, AbstractTickerOpenSignal, AbstractTickerCompleteTrade
-
-from .train.abstract_controller import AbstractSequencePrediction, AbstractCloseSignal, AbstractTickerOpenSignal, AbstractTickerCompleteTrade
-
+from .train import *

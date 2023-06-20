@@ -49,10 +49,7 @@ class RTCore:
 
     #@with_exception(RTCoreError)
     def apply_action(self, action):
-        self.context.set("action", action)
         reward, action_result = self.action_controller.apply_action(action)
-
-        self.context.set("reward", reward)
         if self.COLLECT_METRICS:
             is_open = self.context.get("is_open")
             self.metric_collector.process(reward, action_result, is_open)

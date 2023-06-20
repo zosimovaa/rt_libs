@@ -18,7 +18,7 @@ class TradeAction(BaseAction):
         self.profit = 0
 
     def close(self, close_ts, close_price):
-        """Method closes the trade and fix profit"""
+        """Method closes the trade and fixes profit"""
         if self.is_open:
             self.close_ts = close_ts
             self.close_price = close_price

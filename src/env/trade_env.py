@@ -1,6 +1,10 @@
-import gym
+"""
+Gym trade stock environment
+"""
+
 import logging
 import numpy as np
+import gym
 
 from .log_setup import logger_setup
 
@@ -54,16 +58,12 @@ class TradeEnv(gym.Env):
         return observation
 
     def step(self, action):
-
-
         reward, action_result = self.core.apply_action(action)
 
         self.render()
 
         data_point, done = self.dp_factory.get_next_step()
         observation = self.core.get_observation(data_point)
-
-
 
         self.step_num = self.step_num + 1
 

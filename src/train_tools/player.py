@@ -78,7 +78,7 @@ class Player:
         # Close last trade
         if close_last and len(self.trade_actions_history):
             if self.trade_actions_history[-1].is_open:
-                reward, action_result = self.core.apply_action(3)
+                self.core.action_controller.apply_action_close()
 
         if render:
             self.render_plot()

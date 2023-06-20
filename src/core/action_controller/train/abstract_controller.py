@@ -20,7 +20,10 @@ class AbstractSequencePrediction(BaseActionRouter):
     def __init__(self, context, penalty=-1, reward=0):
         super().__init__(context=context, penalty=penalty, reward=reward)
 
-    def _action_wait(self, ts, is_open):
+    def apply_action_wait(self):
+        is_open = self.context.get("is_open")
+        ts = self.context.get("ts")
+
         if is_open:
             reward = self._get_penalty()
             action_result = BadAction(ts, 0, is_open)
@@ -30,7 +33,10 @@ class AbstractSequencePrediction(BaseActionRouter):
 
         return reward, action_result
 
-    def _action_open(self, ts, is_open):
+    def apply_action_open(self):
+        is_open = self.context.get("is_open")
+        ts = self.context.get("ts")
+
         if is_open:
             reward = self._get_penalty()
             action_result = BadAction(ts, 1, is_open)
@@ -43,7 +49,10 @@ class AbstractSequencePrediction(BaseActionRouter):
 
         return reward, action_result
 
-    def _action_hold(self, ts, is_open):
+    def apply_action_hold(self):
+        is_open = self.context.get("is_open")
+        ts = self.context.get("ts")
+
         if is_open:
             reward = self.reward
             action_result = None
@@ -52,7 +61,10 @@ class AbstractSequencePrediction(BaseActionRouter):
             action_result = BadAction(ts, 2, is_open)
         return reward, action_result
 
-    def _action_close(self, ts, is_open):
+    def apply_action_close(self):
+        is_open = self.context.get("is_open")
+        ts = self.context.get("ts")
+
         if is_open:
             self.trade.close(ts, 2)
             self.context.set("is_open", False)
@@ -70,7 +82,10 @@ class AbstractCloseSignal(AbstractSequencePrediction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _action_close(self, ts, is_open):
+    def apply_action_close(self):
+        is_open = self.context.get("is_open")
+        ts = self.context.get("ts")
+
         if is_open:
 
             self.trade.close(ts, 2)
@@ -100,7 +115,10 @@ class AbstractTickerOpenSignal(AbstractSequencePrediction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _action_open(self, ts, is_open):
+    def apply_action_open(self):
+        is_open = self.context.get("is_open")
+        ts = self.context.get("ts")
+
         if is_open:
             reward = self._get_penalty()
             action_result = BadAction(ts, 1, is_open)
@@ -117,7 +135,10 @@ class AbstractTickerOpenSignal(AbstractSequencePrediction):
 
         return reward, action_result
 
-    def _action_close(self, ts, is_open):
+    def apply_action_close(self):
+        is_open = self.context.get("is_open")
+        ts = self.context.get("ts")
+
         if is_open:
             self.trade.close(ts, 2)
             self.context.set("is_open", False)
@@ -146,7 +167,10 @@ class AbstractTickerCompleteTrade(AbstractSequencePrediction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _action_open(self, ts, is_open):
+    def apply_action_open(self):
+        is_open = self.context.get("is_open")
+        ts = self.context.get("ts")
+
         if is_open:
             reward = self._get_penalty()
             action_result = BadAction(ts, 1, is_open)
@@ -163,7 +187,10 @@ class AbstractTickerCompleteTrade(AbstractSequencePrediction):
 
         return reward, action_result
 
-    def _action_close(self, ts, is_open):
+    def apply_action_close(self):
+        is_open = self.context.get("is_open")
+        ts = self.context.get("ts")
+
         if is_open:
             self.trade.close(ts, 2)
             self.context.set("is_open", False)
@@ -189,5 +216,5 @@ class AbstractTickerCompleteTrade(AbstractSequencePrediction):
 
         else:
             reward = self._get_penalty()
-            action_result = BadAction(self.context)
+            action_result = BadAction(ts, 3, is_open)
         return reward, action_result
