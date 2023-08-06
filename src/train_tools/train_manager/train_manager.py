@@ -1,10 +1,10 @@
-import tensorflow as tf
-import numpy as np
 import os
+import pickle
+import numpy as np
 
 from train_tools.player import Player
 
-from train_tools.train_manager.snapshot_lord import SnapshotLord
+from tensorflow.python.keras.models import save_model, load_model
 
 
 class ResultsBuffer:
@@ -34,7 +34,8 @@ class TrainManager:
 
     WORK_PATH = "./train_snapshots"
     SNAPSHOT_DIR = "snapshots"
-    MODELS_DIR = "models"
+    MODEL_DIR = "model"
+    TRAIN_RESULTS = "train_results"
     TRADE_SETUP_DIR = "trade_setups"
 
     ALIAS_TRAIN = "train"
@@ -47,7 +48,20 @@ class TrainManager:
         self.train_plot = train_plot
         self.alias = alias
         self.agent = agent
-        self.snapshot_lord = SnapshotLord([self.WORK_PATH, alias])
+        # self.snapshot_lord = SnapshotLord([self.WORK_PATH, alias])
+
+        self.model_path = self.create_dir(self.alias, self.MODEL_DIR)
+        self.snapshot_path = self.create_dir(self.alias, self.SNAPSHOT_DIR)
+        self.train_results_path = self.create_dir(self.alias, self.TRAIN_RESULTS)
+
+        save_model(agent.model, self.model_path, overwrite=True, save_format='tf')
+
+    def create_dir(self, *args):
+        """Проверяет наличие директории и при необходимости ее создает"""
+        path = os.path.join(self.WORK_PATH, *list(map(str, args)))
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
 
     @staticmethod
     def get_stop_frames(current_frame, max_frames, stop_frame):
@@ -55,9 +69,7 @@ class TrainManager:
             range(
                 max(stop_frame, int(np.ceil(current_frame / stop_frame) * stop_frame)),
                 max(max_frames + 1, current_frame + 1),
-                stop_frame
-            )
-        )
+                stop_frame))
         return stop_frames
 
     def go(self, max_frames=100000, test_every=5000, update_plot_every=5000, snapshot_every=100000, save_since=0.05):
@@ -93,7 +105,7 @@ class TrainManager:
                 balances.append(scores[-1])
 
             if np.mean(balances) > save_since:
-                self.save_model(self.agent.model, frame)
+                self.save_weights(self.agent.model, frame)
 
             # Делаем снепшот
             if frame % snapshot_every == 0:
@@ -111,16 +123,26 @@ class TrainManager:
                     print("done")
                     break
 
-    def get_model(self, idx):
-        local_path = [self.MODELS_DIR]
-        return self.snapshot_lord.load_model(local_path, str(idx))
+    def get_model(self, frame):
+        """Создает новую модель из базовой и загружает в нее веса из указанного фрейма"""
+        model_path = os.path.join(self.WORK_PATH, self.MODEL_DIR)
+        model = load_model(model_path, compile=True)
 
-    def save_model(self, model, frame):
-        local_path = [self.MODELS_DIR]
-        self.snapshot_lord.save_model(local_path, str(frame), model)
+        weights_path = os.path.join(self.WORK_PATH, self.TRAIN_RESULTS, str(frame))
+        with open(weights_path, "rb") as stream:
+            weights = pickle.load(stream)
+
+        model.set_weights(weights)
+        return model
+
+    def save_weights(self, model, frame):
+        weights = model.get_weights()
+        path = os.path.join(self.WORK_PATH, self.TRAIN_RESULTS, "weights." + str(frame) + ".pkl")
+        with open(path, 'wb') as stream:
+            pickle.dump(weights, stream)
 
     def make_trade_config(self, params, model_id, suffix=None):
-
+        raise NotImplemented("Не переделано на отсутствие snapshot lord")
         model = self.get_model(model_id)
         local_path = [self.TRADE_SETUP_DIR]
 
@@ -132,30 +154,35 @@ class TrainManager:
         self.snapshot_lord.save_config(local_path, "config.yaml", params)
         self.snapshot_lord.save_model(local_path, "model", model, format="tf")
 
+    def get_snapshot_path(self, name):
+        return os.path.join(self.snapshot_path, "snapshot." + name + ".pkl")
+
     def make_snapshot(self, name):
-        local_path = [self.SNAPSHOT_DIR, str(name)]
-        self.snapshot_lord.save_object(local_path, "history.pkl", self.history)
-        self.snapshot_lord.save_object(local_path, "agent_config.pkl", self.agent.get_config())
-        self.snapshot_lord.save_model(local_path, "model", self.agent.model)
-        self.snapshot_lord.save_model(local_path, "model_target", self.agent.model_target)
+        snapshot = {
+            "history": self.history,
+            "agent_config": self.agent.get_config(),
+            "weights_model": self.agent.model.get_weights(),
+            "weights_model_target": self.agent.model_target.get_weights()
+        }
+
+        snapshot_path = self.get_snapshot_path(name)
+        with open(snapshot_path, 'wb') as stream:
+            pickle.dump(snapshot, stream, protocol=pickle.HIGHEST_PROTOCOL)
 
     def load_snapshot(self, name):
         try:
-            local_path = [self.SNAPSHOT_DIR, str(name)]
-
-            history = self.snapshot_lord.load_object(local_path, "history.pkl")
-            agent_config = self.snapshot_lord.load_object(local_path, "agent_config.pkl")
-
-            model = self.snapshot_lord.load_model(local_path, "model")
-            model_target = self.snapshot_lord.load_model(local_path, "model_target")
+            snapshot_path = self.get_snapshot_path(name)
+            with open(snapshot_path, "rb") as stream:
+                snapshot = pickle.load(stream)
 
         except Exception as e:
+            print(e)
             print("Снепшот не найден или поврежден. Что-то прошло не так")
         else:
-            self.history = history
-            self.agent.load_config(agent_config)
-            self.agent.model.set_weights(model.get_weights())
-            self.agent.model_target.set_weights(model_target.get_weights())
+            self.history = snapshot["history"]
+            self.agent.load_config(snapshot["agent_config"])
+            self.agent.model.set_weights(snapshot["weights_model"])
+            self.agent.model_target.set_weights(snapshot["weights_model_target"])
             print(f"Снепшот успешно загружен на эпизоде {self.agent.episode_count}")
 
     def get_train_stat(self, top_n=20):
