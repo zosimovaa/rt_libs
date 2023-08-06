@@ -18,10 +18,10 @@ class RTCore:
     COLLECT_METRICS = True
 
     """Implementation of a trainer with a basic set of features."""
-    def __init__(self, context, action_controller, observation):
+    def __init__(self, context, action_controller, observation_builder):
         self.context = context
         self.action_controller = action_controller
-        self.observation_builder = observation
+        self.observation_builder = observation_builder
         self.metric_collector = MetricCollector()
         logger.debug("Instance initialized")
 

@@ -61,7 +61,7 @@ class ActionControllerDiffReward(BaseActionRouter):
         else:
             # так быстрее
             if self.scale_wait:
-                # минут добавляется т.к. при росте курса в отсутствии открытой операции нужно дать штраф.
+                # минуc добавляется т.к. при росте курса в отсутствии открытой операции нужно дать штраф.
                 reward = -self._get_diff_reward() * self.scale_wait
             else:
                 reward = 0
@@ -172,11 +172,9 @@ class ActionControllerNegativeProfitReward(ActionControllerDiffReward):
                 reward = 0
             else:
                 # Награду не инверсируем. Ибо есть открытая операция.
-                reward = profit * self.scale_wait
+                reward = profit * self.scale_hold
                 # Так же передаем агенту только негативную награу.
-                reward = min(0, reward)
-
-            reward = profit * self.scale_hold
+                #reward = min(0, reward)
             action_result = None
         else:
             reward = self._get_penalty()

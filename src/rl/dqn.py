@@ -28,7 +28,7 @@ class DQNAgent:
         self.state_size = env.observation_space
         self.action_size = env.action_space
 
-        # decay or discount rate: enables agent to take into account future actions in addition to the immediate ones, but discounted at this rate
+        # decay or discount rate: enables agent to take into account future action_handlers in addition to the immediate ones, but discounted at this rate
         self.gamma = 0.99
 
         # Number of frames for exploration
@@ -194,7 +194,7 @@ class DQNAgent:
             next_state, reward, done, _ = self.env.step(action)
             self.episode_reward += reward
 
-            # Save actions and states in replay buffer
+            # Save action_handlers and states in replay buffer
             self.replay_buffer.push(self.state, action, reward, next_state, done)
             self.state = next_state
 

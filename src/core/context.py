@@ -1,5 +1,6 @@
 class Context:
     DEFAULT_SECTION = "common"
+    STORED_PARAMS = ("lowest_ask", "highest_bid")
 
     def __init__(self):
         self.params = {}
@@ -29,7 +30,7 @@ class Context:
 
         ts = data_point.get_current_index()
         self.set("ts", ts)
-        for key in ("lowest_ask", "highest_bid"):
+        for key in self.STORED_PARAMS:
             try:
                 value = data_point.get_value(key)[0]
             except KeyError:

@@ -4,3 +4,4 @@ from .abstract_controller import AbstractTickerOpenSignal
 from .abstract_controller import AbstractTickerCompleteTrade
 
 from .action_controller_diff_reward import ActionControllerDiffReward
+from .action_controller_profit_reward import ActionControllerProfitReward

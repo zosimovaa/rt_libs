@@ -9,7 +9,7 @@ import numpy as np
 from tests.test_dataset import TestDatasetGenerator
 
 from src.data_point import DataPointFactory
-from src.core.context import BasicContext
+from src.core.context import Context
 from src.core.actions import TradeAction, BadAction
 from src.core.action_controller import ActionControllerDiffReward
 
@@ -37,7 +37,7 @@ class TickerBasicTestCase(unittest.TestCase):
             n_future_points=0,
             step_size=None
         )
-        self.context = BasicContext(market_fee=self.market_fee)
+        self.context = Context(market_fee=self.market_fee)
 
         self.reward = 0
         self.penalty = -2

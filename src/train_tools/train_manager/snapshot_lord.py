@@ -16,7 +16,7 @@ class SnapshotLord:
         if not os.path.exists(path):
             os.makedirs(path)
 
-    def save_model(self, paths, model_name, model, format="h5"):
+    def save_model(self, paths, model_name, model, format="keras"):
         """Сохраняет модель в процессе тренировки в папку"""
         path = os.path.join(self.absolute_path, *paths)
         self._check_dir(path)

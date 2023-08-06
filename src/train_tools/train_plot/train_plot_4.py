@@ -36,7 +36,7 @@ class TrainPlot4:
                       row=1, col=1)
         # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
         # Добавляем график с количество штрафов на тренировочном датасете.
-        fig.add_trace(go.Scatter(name="Train", mode='lines', legendgroup="2",
+        fig.add_trace(go.Scatter(name="Train", mode='lines', legendgroup="2", 
                                  line={"color": px.colors.qualitative.D3[3], "width": 1}),
                       row=2, col=1, secondary_y=False)
 
