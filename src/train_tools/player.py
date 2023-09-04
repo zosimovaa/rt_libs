@@ -98,14 +98,14 @@ class Player:
 
     def render_plot(self):
         self.fig, self.ax = plt.subplots(figsize=(self.fig_size_x, self.fig_size_y), ncols=1, nrows=1, dpi=self.dpi,
-                                         constrained_layout=True)
+                                         constrained_layout=False)
         ax2 = self.ax.twinx()
 
         self.draw_price(self.ax)
-        self.draw_trade_actions(self.ax)
-        self.draw_bad_actions(self.ax)
         self.draw_reward(ax2)
-        self.draw_stat(self.ax)
+        self.draw_trade_actions(self.ax)
+        # self.draw_bad_actions(self.ax)
+        # self.draw_stat(self.ax)
 
     def draw_price(self, ax):
         rates, idxs = self.get_param("highest_bid")
@@ -151,8 +151,10 @@ class Player:
                 ax.plot((bad_action.ts, bad_action.ts), (y_min, y_max), color='red', linestyle='dashed')
 
     def draw_reward(self, ax):
-        reward, idxs = self.get_param("reward")
-        ax.bar(idxs, reward, alpha=0.2, color="orange")
+        rewards, idxs = self.get_param("reward")
+        width = 0.75 * (idxs[1] - idxs[0])
+
+        ax.bar(idxs, rewards, alpha=0.3, width=width, color="black", align='center')
 
     def get_message(self):
         msg = "Balance: {Balance:.4f} \n" \
@@ -166,4 +168,4 @@ class Player:
 
     def get_param(self, param):
         data = [(step.get(param), step.get("idx")) for step in self.play_log]
-        return zip(*data)
+        return map(np.array, zip(*data))

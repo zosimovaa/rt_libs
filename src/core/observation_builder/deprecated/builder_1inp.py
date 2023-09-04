@@ -1,12 +1,12 @@
 """
-Базовый билдер с фичем в одном измерении:
+Базовый билдер с фичей в одном измерении:
 
 """
 
 import logging
 import numpy as np
 
-from .base_builder import BaseObservationBuilder
+from core.observation_builder.base_builder import BaseObservationBuilder
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseFeature(metaclass=abc.ABCMeta):
-    """Calculate features_del on the fly"""
+    """Calculate features on the fly"""
 
     def __init__(self, context, step_factor=(1,), scale_output=1):
         self.context = context

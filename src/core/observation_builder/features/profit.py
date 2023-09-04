@@ -17,11 +17,11 @@ class ProfitFeature2D(BaseFeature):
         super().__init__(context, step_factor=step_factor, scale_output=scale_output)
 
     def _get(self):
-        trade_state = self.context.get("is_open")
+        is_open = self.context.get("is_open")
         data_point = self.context.data_point
         trade = self.context.get("trade")
 
-        if trade_state:
+        if is_open:
             timestamps = data_point.get_points(step_factor=self.step_factor)
             mask = (timestamps > trade.open_ts) & (timestamps <= trade.close_ts)
             current_rates = data_point.get_values("highest_bid", step_factor=self.step_factor)

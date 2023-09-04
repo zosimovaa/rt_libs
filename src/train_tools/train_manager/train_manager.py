@@ -3,10 +3,11 @@ import pickle
 import numpy as np
 import tensorflow as tf
 
-from train_tools.player import Player
+from ..player import Player
 
 
 class ResultsBuffer:
+    """Хранит результаты обучения и позволяет доставать значения метрик в разрезе alias(name) """
     def __init__(self):
         self.data = {}
 
@@ -87,22 +88,25 @@ class TrainManager:
             if self.agent.new_episode:
                 score = self.agent.env.core.get_metrics()
                 self.history.save_stat(self.ALIAS_TRAIN, frame, score)
+                if score > save_since:
+                    self.save_weights(self.agent.model, frame)
 
             # Проверяем и сохраняем в результат на тестовых датасетах
             if frame % test_every == 0:
                 player = Player(self.core, self.agent.model, self.dpf)
                 score, play_log = player.play(render=False)
                 self.history.save_stat(self.ALIAS_TEST, frame, score)
+                if score > save_since:
+                    self.save_weights(self.agent.model, frame)
 
-            # Сохраняем модель
-            aliases = self.history.get_aliases()
-            balances = []
-            for alias in aliases:
-                frames, scores = self.history.get_data(alias, "Balance")
-                balances.append(scores[-1])
-
-            if np.mean(balances) > save_since:
-                self.save_weights(self.agent.model, frame)
+            ## Сохраняем модель
+            #aliases = self.history.get_aliases()
+            #balances = []
+            #for alias in aliases:
+            #    frames, scores = self.history.get_data(alias, "Balance")
+            #    balances.append(scores[-1])
+            #if np.mean(balances) > save_since:
+            #    self.save_weights(self.agent.model, frame)
 
             # Делаем снепшот
             if frame % snapshot_every == 0:

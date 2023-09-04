@@ -13,5 +13,3 @@ class Input2D(BaseInput):
         data = [feat.get() for feat in self.features]
         data = np.concatenate(data, axis=1)
         return np.array(data, dtype=np.float32)
-        #data = np.concatenate(data, axis=1, dtype=np.float32)
-        #return data

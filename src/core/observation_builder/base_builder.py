@@ -1,5 +1,5 @@
 """
-В модуле описан базовый класс для реализации ObservationBuilder
+В модуле описан иннтерфейс для реализации ObservationBuilder
 """
 from abc import ABC, abstractmethod
 

@@ -1,8 +1,14 @@
 """
-Package implements different types of observaion builders
-"""
-from .builder_1inp import ObservationBuilder1Inp
-from .builder_2inp import ObservationBuilder2Inp
+Package contain observation builder implementation for making observation from data_point
 
-from .builder_inputs import ObservationBuilderInput
+Observation builder - is a constructor^ which consist of few levels
+
+ObservationBuilderClass
+
+
+
+"""
+from core.observation_builder.deprecated.builder_2inp import ObservationBuilder2Inp
+from .multiple_inputs_builder import ObservationBuilderInput
+
 

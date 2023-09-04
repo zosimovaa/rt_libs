@@ -15,7 +15,7 @@ array([[-1.9651896e-01,  0.0000000e+00],
 import logging
 import numpy as np
 
-from .base_builder import BaseObservationBuilder
+from core.observation_builder.base_builder import BaseObservationBuilder
 
 logger = logging.getLogger(__name__)
 
