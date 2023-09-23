@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import tensorflow as tf
-from core_v2.actions import BadAction, TradeAction
+from .actions import BadAction, TradeAction
 import numpy as np
 
 
