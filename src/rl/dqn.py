@@ -189,7 +189,7 @@ class DQNAgent:
                 self.episode_count += 1
                 self.state = self.env.reset()
 
-            # env.render()
+            #self.env.render()
             action = self.act(self.state)
             next_state, reward, done, _ = self.env.step(action)
             self.episode_reward += reward

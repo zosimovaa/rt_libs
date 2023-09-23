@@ -23,5 +23,4 @@ def logger_setup(log, alias, log_dir="logs"):
     fh_step.setLevel(logging.WARNING)
     fh_step.setFormatter(FORMATTER)
     log.addHandler(fh_step)  # set the new handler
-
     return log

@@ -54,7 +54,7 @@ class DataPointFactory:
 
     def get_current_step(self):
         """ Возвращает текущий data_point"""
-        data = self.dataset.iloc[self.cursor - self.offset : self.cursor + self.future_points , : ]
+        data = self.dataset.iloc[self.cursor - self.offset : self.cursor + self.future_points, : ]
 
         data_point = DataPoint(
             data,

@@ -16,3 +16,18 @@ class TestDatasetGenerator:
         dataset = pd.DataFrame(dataset, columns=["ts", "lowest_ask", "highest_bid"])
         dataset = dataset.set_index("ts")
         return dataset
+
+
+class TestDatasetGenerator_v2:
+    @staticmethod
+    def make(features, num=30, idx_start=1000000, idx_step=1):
+        idx_end = num * idx_step + idx_start
+        idxs = np.arange(idx_start, idx_end, idx_step)
+
+        data = []
+        for feat in features:
+            val_end = num * features[feat]["step"] + features[feat]["start"]
+            data.append(np.arange(features[feat]["start"], val_end, features[feat]["step"])[:num].reshape(-1, 1))
+
+        df = pd.DataFrame(np.concatenate(data, axis=1), columns=features.keys(), index=idxs)
+        return df

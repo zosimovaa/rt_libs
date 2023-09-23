@@ -1,6 +1,6 @@
 
 """
-Класс DataPoint реализован, чтобы передать текущее представление точки данных в core.
+Класс DataPoint реализован, чтобы передать текущее представление точки данных в core_v1.
 
 Данный класс решает несколько проблем:
  1. На этапе обучение позвозяет передать дополнительные данные о точках в будущем
@@ -48,8 +48,7 @@ class DataPoint:
 
     def get_points(self, step_factor=1, num=None):
         """Возвращает индексы по реперным точкам - т.е. будет соответствовать количеству запрошенных точек"""
-        if num is None:
-            num = self.observation_len
+        num = self._get_num(num)
 
         if num >= 0:
             up_bound = self.cursor + 1
@@ -63,8 +62,7 @@ class DataPoint:
 
     def get_indexes(self, step_factor=1, num=None):
         """Возвращает все индексы, в том числе расположенные между реперными точками"""
-        if num is None:
-            num = self.observation_len
+        num = self._get_num(num)
 
         if num >= 0:
             up_bound = self.cursor + 1
@@ -79,8 +77,7 @@ class DataPoint:
         return low_bound, up_bound
 
     def get_values(self, name, step_factor=1, num=None):
-        if num is None:
-            num = self.observation_len
+        num = self._get_num(num)
 
         low_bound, up_bound = self.get_indexes(step_factor=step_factor, num=num)
         col = self.data.loc[:, name].values
@@ -88,9 +85,23 @@ class DataPoint:
 
         return result
 
+    def get_values2(self, name, step_factor=1, num=None, agg="average"):
+        """Делает тоже сакмое, что и get_values, только возвращает количество точек, указанных в num
+        Поведение будет отличаться от get_values при step_factor>1
+        """
+        num = self._get_num(num)
+
+        low_bound, up_bound = self.get_indexes(step_factor=step_factor, num=num)
+        col = self.data.loc[:, name].values
+        result = col[low_bound: up_bound]
+
+        result = getattr(np, agg)(result.reshape(-1, step_factor), axis=1)
+
+        return result
+
     def get_value(self, name, step_factor=1, idx=None):
         """Метод возвращает одно значение. По умолчанию для текущего индекса.
-        Индекс можно задать из вне. Данные возвращаются с учетом scale_factor
+        Индекс можно задать при вызове метода. Данные возвращаются с учетом step_factor
         Расчет по одной точке (_build_point в AbstractFeatureWithHistory) для scalefactor>1 будет неточным -
         там надо считать все сразу. Надо исследовать, сходу сложно оценить.
         """
@@ -105,3 +116,11 @@ class DataPoint:
 
     def get_current_index(self):
         return self.current_idx
+
+    def _get_num(self, num):
+        if num is None:
+            return self.observation_len
+
+        if num == -1:
+            return len(self.data) - self.offset
+

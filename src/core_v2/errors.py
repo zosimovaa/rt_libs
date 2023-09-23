@@ -1,0 +1,2 @@
+class RTCoreError(Exception):
+    pass

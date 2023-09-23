@@ -88,7 +88,7 @@ class TrainManager:
             if self.agent.new_episode:
                 score = self.agent.env.core.get_metrics()
                 self.history.save_stat(self.ALIAS_TRAIN, frame, score)
-                if score > save_since:
+                if score.get("Balance", 0) > save_since:
                     self.save_weights(self.agent.model, frame)
 
             # Проверяем и сохраняем в результат на тестовых датасетах
@@ -96,7 +96,7 @@ class TrainManager:
                 player = Player(self.core, self.agent.model, self.dpf)
                 score, play_log = player.play(render=False)
                 self.history.save_stat(self.ALIAS_TEST, frame, score)
-                if score > save_since:
+                if score.get("Balance", 0) > save_since:
                     self.save_weights(self.agent.model, frame)
 
             ## Сохраняем модель
