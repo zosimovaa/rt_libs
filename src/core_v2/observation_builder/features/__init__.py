@@ -15,6 +15,6 @@ from .volumes import TradeVolumes, TradeCount
 
 #
 
-
+from .moving_average import MovingAverageFeature
 
 

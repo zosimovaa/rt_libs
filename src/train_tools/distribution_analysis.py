@@ -13,12 +13,15 @@ def distribution_analysis(dpf, core, trade_every=30, plot_x_size=3, plot_y_size=
 
 def collect_values(dpf, core, trade_every):
     data = {}
+
+    feat_n = 0
     for inp in core.observation_builder.inputs:
         for feature in inp.features:
+            feat_n += 1
             done = False
             dpf.reset()
             i = 0
-            key = feature.__str__()
+            key = f"{feat_n}.{feature.__str__()}"
 
             #core.action_controller.apply_action_open()
             while not done:

@@ -27,7 +27,6 @@ class ProfitFeature(BaseFeature):
             mask = (timestamps >= trade.open_ts) & (timestamps <= trade.close_ts)
 
             values = data_point.get_values(self.price, step_factor=self.step_factor)
-            values = np.average(values.reshape(-1, self.step_factor), axis=1)
 
             feature = values / trade.open_price - 1 - trade.market_fee
             feature = feature * mask
