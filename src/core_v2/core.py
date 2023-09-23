@@ -61,8 +61,3 @@ class RTCore(ContextConsumer):
     #@with_exception(RTCoreError)
     def get_metrics(self):
         return self.metric_collector.get_metrics()
-
-
-
-
-
