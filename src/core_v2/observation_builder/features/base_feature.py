@@ -1,6 +1,5 @@
 import logging
 import numpy as np
-from collections import deque
 
 from ...context import ContextConsumer
 
