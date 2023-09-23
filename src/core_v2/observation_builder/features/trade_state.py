@@ -16,5 +16,5 @@ class TradeStateSingleFeature(BaseFeature):
         super().__init__(*args, **kwargs)
 
     def _get(self):
-        feature = self.context.get("is_open")
+        feature = int(self.context.get("is_open"))
         return np.array([feature])

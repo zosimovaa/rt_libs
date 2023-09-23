@@ -1,5 +1,7 @@
-from .base_feature import BaseFeature
-from .base_feature_w_history import BaseFeatureWithHistory
+from .raw import RawValueFeature, RawContextFeature
+
+#from .base_feature import BaseFeature
+#from .base_feature_w_history import BaseFeatureWithHistory
 
 # Single state features
 from .trade_state import TradeStateSingleFeature
@@ -12,6 +14,7 @@ from .orderbook import OrderbookDiffFeature
 from .volumes import TradeVolumes, TradeCount
 
 #
-from .raw import RawValueFeature, RawContextFeature
+
+
 
 

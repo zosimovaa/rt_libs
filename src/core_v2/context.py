@@ -27,7 +27,7 @@ class Context(metaclass=Singleton):
         self.params = {}
 
     def get(self, name):
-        return self.params.get(name, 0)
+        return self.params.get(name)
 
     def put(self, name, value):
         self.params[name] = value

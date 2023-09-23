@@ -21,6 +21,14 @@ class BaseInput:
         """Метод возвращает сформированынй инпут"""
         raise NotImplementedError
 
+    @staticmethod
+    def _check_data(data):
+        if np.isnan(data).sum():
+            raise Exception("NAN values detected in Input")
+
+        if np.isinf(data).sum():
+            raise Exception("INF values detected in Input")
+
 
 class Input1D(BaseInput):
     """Одномерный инпут"""
@@ -29,7 +37,9 @@ class Input1D(BaseInput):
 
     def get(self):
         data = np.concatenate([feat.get() for feat in self.features], axis=0)
-        return np.array(data, dtype=np.float32)
+        data = np.array(data, dtype=np.float32)
+        self._check_data(data)
+        return data
 
 
 class Input2D(BaseInput):
@@ -39,4 +49,8 @@ class Input2D(BaseInput):
 
     def get(self):
         data = np.concatenate([feat.get().reshape(-1, 1) for feat in self.features], axis=1)
-        return np.array(data, dtype=np.float32)
+        data = np.array(data, dtype=np.float32)
+        self._check_data(data)
+        return data
+
+
