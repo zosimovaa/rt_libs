@@ -57,7 +57,7 @@ class DataPoint:
             return self.observation_len
         elif num == -1:
             # Вычисление позволяет передать максимальное количество точек для вычисления value со step_factor выше 1.
-            return self.tail_points // (self.observation_len * step_factor) * (self.observation_len * step_factor)
+            return self.tail_points // (self.observation_len * step_factor) * self.observation_len
         else:
             return num
 
