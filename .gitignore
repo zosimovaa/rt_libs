@@ -54,3 +54,4 @@ src/core_v2/observation_builder/__pycache__
 cpython-39.pyc
 src/core_v2/action_controller/trade_controllers/__pycache__
 *.pyc
+src/core_v2/observation_builder/features/notebooks/.ipynb_checkpoints
