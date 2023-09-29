@@ -8,10 +8,10 @@ logger = logging.getLogger(__name__)
 
 class BaseFeature(ContextConsumer):
     """Базовый класс, рассчитывает значения на лету"""
+    ATTRIBUTES_NAMES = ("step_factor", "level", "name", "feature", "ma_points")
 
     def __init__(self, alias, step_factor=1, scale_output=1, clip_output=0, normalization=False):
         super().__init__(alias)
-        self.name = "BaseFeature"
         self.step_factor = step_factor
         self.scale_output = scale_output
         self.clip_output = clip_output
@@ -46,4 +46,11 @@ class BaseFeature(ContextConsumer):
         raise NotImplementedError
 
     def __str__(self):
-        return f"{self.__class__.__name__}(sf:{self.step_factor})"
+        obj = self.__dict__
+        feature_name = self.__class__.__name__
+        for attr_name in self.ATTRIBUTES_NAMES:
+            if attr_name in obj:
+                feature_name += f"-{attr_name}:{obj[attr_name]}"
+        feature_name
+
+        return feature_name
