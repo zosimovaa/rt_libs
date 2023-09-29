@@ -23,16 +23,16 @@ def collect_values(dpf, core, trade_every):
             i = 0
             key = f"{feat_n}.{feature.__str__()}"
 
-            #core.action_controller.apply_action_open()
+            core.action_controller.apply_action_open()
             while not done:
                 i += 1
                 dp, done = dpf.get_next_step()
                 feature.context.set_dp(dp)
-                if i % trade_every == 0:
-                    if core.context.get("is_open"):
-                        core.action_controller.apply_action_close()
-                    else:
-                        core.action_controller.apply_action_open()
+                #if i % trade_every == 20:
+                #    if core.context.get("is_open"):
+                #        core.action_controller.apply_action_close()
+                #    else:
+                #        core.action_controller.apply_action_open()
 
                 values = feature.get()
                 if key not in data:

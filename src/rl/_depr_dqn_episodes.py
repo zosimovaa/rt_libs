@@ -15,7 +15,7 @@ import tensorflow as tf
 logger = logging.getLogger(__name__)
 
 
-class DQNAgent:
+class DQNAgentEpisodes:
     def __init__(self, env, model, model_target):
         self.env = env
         self.model = model

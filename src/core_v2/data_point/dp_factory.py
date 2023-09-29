@@ -21,23 +21,24 @@ class DataPointFactory:
         :param observation_len: количество точек в наблюдении
         :param future_points: количество точек в будущем
         """
-        self.dataset = dataset
 
-        self.data = dataset.values
-        self.columns = dataset.columns
-        self.indexes = dataset.index
+        self.data = dataset.values              # Данные
+        self.columns = dataset.columns          # Названия колонок
+        self.indexes = dataset.index            # Индексы (время)
 
-        self.offset = offset
-        self.step_size = step_size
-        self.observation_len = observation_len
-        self.future_points = future_points
-        self.done = False
-        self.alias = alias
+        self.observation_len = observation_len  # Длина наблюдения. Не может быть  больше offset
+        self.future_points = future_points      # Количество точек из будущего, которые захватим (стоят правее курсора)
+        self.offset = offset                    # Исторический хвост, который всегда прицепляем к текущему курсору
+        self.cursor = offset                    # Текущий шаг по датасету. Начальное значенеи равно оффсету
+        self.step_size = step_size              # Шаг по датасету.
 
-        # self.period = self.dataset.index[1] - self.dataset.index[0]
-        self.max_cursor = self.dataset.shape[0] - self.future_points - 1 # -1 - т.к. индексация с нуля
-        self.max_steps = self.max_cursor - self.offset + 1
-        self.cursor = self.offset
+        self.done = False                       # Признак достижения конца датасета
+        self.alias = alias                      # Возможно, это рудимент, который уже можно удалить
+
+        self.max_cursor = self.data.shape[0] - self.future_points - 1 # -1 - т.к. индексация с нуля
+        self.max_steps = (self.max_cursor - self.offset) // self.step_size + 1
+
+
 
         self.reset()
 

@@ -6,6 +6,27 @@ from train_tools.player import Player
 
 from .snapshot_lord import SnapshotLord
 
+class ResultsBuffer:
+    """Хранит результаты обучения и позволяет доставать значения метрик в разрезе alias(name) """
+    def __init__(self):
+        self.data = {}
+
+    def save_stat(self, name, frame, score):
+        if name not in self.data:
+            self.data[name] = []
+        self.data[name].append((frame, score))
+
+    def get_data(self, name, metric):
+        records = self.data.get(name)
+        if records is not None:
+            idxs, data = zip(*records)
+            score = [step[metric] for step in data]
+        else:
+            idxs, score = [], []
+        return idxs, score
+
+    def get_aliases(self):
+        return self.data.keys()
 
 class TrainManagerEpisode:
     """Позволяет итеративно запускать тренировку агента, контроллирует критерии остановки и организует проверку модели на тестовых данных"""
@@ -18,7 +39,7 @@ class TrainManagerEpisode:
     def __init__(self, agent, core, dpf, train_plot=None, alias="AliasTest"):
         self.core = core
         self.dpf = dpf
-        self.history = []
+        self.history = ResultsBuffer()
         self.train_plot = train_plot
         self.alias = alias
         self.agent = agent
@@ -51,7 +72,7 @@ class TrainManagerEpisode:
                 if score["Balance"] > save_since:
                     self.save_model(self.agent.model, episode)
 
-            self.history.append(step)
+            self.history.save_stat(step)
 
             if self.train_plot is not None and episode % snapshot_every == 0:
                 self.make_snapshot(str(episode))

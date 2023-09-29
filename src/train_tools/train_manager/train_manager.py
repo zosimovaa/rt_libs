@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..player import Player
+from ..telegram import TelegramSend
 
 
 class ResultsBuffer:
@@ -37,6 +38,7 @@ class TrainManager:
     SNAPSHOT_DIR = "snapshots"
     TRAIN_RESULTS = "train_results"
     TRADE_SETUP_DIR = "trade_setups"
+    DEFAULT_SNAPSHOT_NAME = "last_state"
 
     ALIAS_TRAIN = "train"
     ALIAS_TEST = "test"
@@ -48,6 +50,15 @@ class TrainManager:
         self.train_plot = train_plot
         self.alias = alias
         self.agent = agent
+
+        self.test_every = 5000
+        self.update_plot_every = 5000
+        self.snapshot_every = 500000
+        self.save_state_every = 25000
+        self.save_test_since = 0.05
+        self.save_train_since = 0.01
+
+        self.ts = TelegramSend(alias)
 
         self.model_path = self.create_dir(self.MODEL_DIR)
 
@@ -70,14 +81,15 @@ class TrainManager:
                 stop_frame))
         return stop_frames
 
-    def go(self, max_frames=100000, test_every=5000, update_plot_every=5000, snapshot_every=100000, save_since=0.05):
+    def go(self, max_frames=100000):
         current_frame = self.agent.frame_count
 
-        test_frames = self.get_stop_frames(current_frame, max_frames, test_every)
-        snapshot_frames = self.get_stop_frames(current_frame, max_frames, snapshot_every)
-        update_plot_frames = self.get_stop_frames(current_frame, max_frames, update_plot_every)
+        test_frames = self.get_stop_frames(current_frame, max_frames, self.test_every)
+        snapshot_frames = self.get_stop_frames(current_frame, max_frames, self.snapshot_every)
+        update_plot_frames = self.get_stop_frames(current_frame, max_frames, self.update_plot_every)
+        save_state_frames = self.get_stop_frames(current_frame, max_frames, self.save_state_every)
 
-        test_frames = sorted(set(test_frames + snapshot_frames + update_plot_frames))
+        test_frames = sorted(set(test_frames + snapshot_frames + update_plot_frames + save_state_frames))
 
         max_frame = test_frames.pop(0)
         while True:
@@ -88,15 +100,15 @@ class TrainManager:
             if self.agent.new_episode:
                 score = self.agent.env.core.get_metrics()
                 self.history.save_stat(self.ALIAS_TRAIN, frame, score)
-                if score.get("Balance", 0) > save_since:
+                if score.get("Balance", 0) > self.save_train_since:
                     self.save_weights(self.agent.model, frame)
 
             # Проверяем и сохраняем в результат на тестовых датасетах
-            if frame % test_every == 0:
+            if frame % self.test_every == 0:
                 player = Player(self.core, self.agent.model, self.dpf)
                 score, play_log = player.play(render=False)
                 self.history.save_stat(self.ALIAS_TEST, frame, score)
-                if score.get("Balance", 0) > save_since:
+                if score.get("Balance", 0) > self.save_test_since:
                     self.save_weights(self.agent.model, frame)
 
             ## Сохраняем модель
@@ -109,11 +121,15 @@ class TrainManager:
             #    self.save_weights(self.agent.model, frame)
 
             # Делаем снепшот
-            if frame % snapshot_every == 0:
+            if frame % self.snapshot_every == 0:
                 self.make_snapshot(str(frame))
 
+            # Делаем сохранение последнего стейта
+            if frame % self.save_state_every == 0:
+                self.make_snapshot()
+
             # Обновляем график
-            if self.train_plot is not None and frame % update_plot_every == 0:
+            if self.train_plot is not None and frame % self.update_plot_every == 0:
                 self.train_plot.update_plot(self.history)
 
             # Проверяем условие выхода
@@ -121,7 +137,9 @@ class TrainManager:
                 if len(test_frames):
                     max_frame = test_frames.pop(0)
                 else:
-                    print("done")
+                    print(f"Finished at frame {frame}")
+                    if self.ts is not None:
+                        self.ts.send(f"Finished at frame {frame}")
                     break
 
     def get_snapshot_path(self, name):
@@ -152,7 +170,7 @@ class TrainManager:
         with open(path, 'wb') as stream:
             pickle.dump(weights, stream)
 
-    def make_snapshot(self, name):
+    def make_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
         snapshot = {
             "history": self.history,
             "agent_config": self.agent.get_config(),
@@ -164,7 +182,7 @@ class TrainManager:
         with open(path, 'wb') as stream:
             pickle.dump(snapshot, stream, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def load_snapshot(self, name):
+    def load_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
         try:
             path = self.get_snapshot_path(name)
             with open(path, "rb") as stream:
@@ -193,15 +211,15 @@ class TrainManager:
         self.snapshot_lord.save_config(local_path, "config.yaml", params)
         self.snapshot_lord.save_model(local_path, "model", model, format="tf")
 
-    def get_train_stat(self, top_n=20):
+    def get_train_stat(self, name="test", top_n=20):
 
-        frames, balances = self.history.get_data("test", "Balance")
+        frames, balances = self.history.get_data(name, "Balance")
         top_scores = np.flip(np.argsort(balances))[:top_n]
 
-        _, penalties = self.history.get_data("test", "Penalties")
-        _, total_rewards = self.history.get_data("test", "TotalReward")
-        _, steps_opened = self.history.get_data("test", "StepsOpened")
-        _, steps_closed = self.history.get_data("test", "StepsClosed")
+        _, penalties = self.history.get_data(name, "Penalties")
+        _, total_rewards = self.history.get_data(name, "TotalReward")
+        _, steps_opened = self.history.get_data(name, "StepsOpened")
+        _, steps_closed = self.history.get_data(name, "StepsClosed")
 
         for top_score_idx in top_scores:
             idx = frames[top_score_idx]
@@ -211,3 +229,18 @@ class TrainManager:
                 f"Penalties: {penalties[top_score_idx]:<4} | TotalReward: {total_rewards[top_score_idx]:<9.2f}"
                 f"Sparsity {sparsity:<3.2f}"
             )
+
+    def drop_snapshots(self, name=ALIAS_TRAIN, threshold=0.09):
+        frames, balances = self.history.get_data(name, "Balance")
+        frames = np.array(frames)
+        idx_filtered = np.argwhere(np.array(balances) < threshold)
+
+        dropped = []
+        for idx in idx_filtered:
+            weight_to_delete = self.get_train_results_path(frames[idx][0])
+            path = os.path.abspath(weight_to_delete)
+            if os.path.isfile(path):
+                file_stats = os.stat(path)
+                dropped.append(file_stats.st_size / (1024 * 1024))
+                os.remove(path)
+        print(f"{len(dropped)} files with a capacity of {np.round(sum(dropped), 2)} Mb were deleted")
