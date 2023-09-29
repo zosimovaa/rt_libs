@@ -154,6 +154,7 @@ class DQNAgent:
         # Build the updated Q-values for the sampled future states
         # Use the target model for stability
         future_rewards = self.model_target(next_states)
+
         # Q value = reward + discount factor * expected future reward
         updated_q_values = rewards + self.gamma * tf.reduce_max(future_rewards, axis=1)
 
