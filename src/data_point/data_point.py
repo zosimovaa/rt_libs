@@ -118,9 +118,12 @@ class DataPoint:
         return self.current_idx
 
     def _get_num(self, num):
+
         if num is None:
             return self.observation_len
 
-        if num == -1:
+        elif num == -1:
             return len(self.data) - self.offset
 
+        else:
+            return num

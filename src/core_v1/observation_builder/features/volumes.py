@@ -23,7 +23,7 @@ class TradeVolumes2D(BaseFeature):
 
         if self.step_factor > 1:
             res = []
-            for i in range(data_point.OBSERVATION_LEN):
+            for i in range(data_point.observation_len):
                 val = feature[self.step_factor * i: self.step_factor * (i + 1)]
                 res.append(val.sum())
             feature = np.array(res)
@@ -46,7 +46,7 @@ class TradeCount2D(BaseFeature):
 
         if self.step_factor > 1:
             res = []
-            for i in range(data_point.OBSERVATION_LEN):
+            for i in range(data_point.observation_len):
                 val = feature[self.step_factor * i: self.step_factor * (i + 1)]
                 res.append(val.sum())
             feature = np.array(res)

@@ -29,7 +29,7 @@ class ProfitFeature2D(BaseFeature):
             profit = current_rates / trade.open_price - 1 - trade.market_fee
             profit = profit * mask * self.scale_output
         else:
-            profit = np.zeros(data_point.OBSERVATION_LEN)
+            profit = np.zeros(data_point.observation_len)
 
         return profit.reshape(-1, 1)
 
@@ -48,7 +48,7 @@ class ProfitDiffFeature2D(BaseFeature):
         if trade_state:
             timestamps = data_point.get_points(step_factor=self.step_factor, num=data_point.OBSERVATION_LEN + 1)
             mask = (timestamps > trade.open_ts) & (timestamps <= trade.close_ts)
-            current_rates = data_point.get_values("highest_bid", step_factor=self.step_factor, num=data_point.OBSERVATION_LEN + 1)
+            current_rates = data_point.get_values("highest_bid", step_factor=self.step_factor, num=data_point.observation_len + 1)
             current_rates = current_rates[self.step_factor - 1::self.step_factor]
             profit = current_rates / trade.open_price - 1 - trade.market_fee
             profit = profit * mask
@@ -56,6 +56,6 @@ class ProfitDiffFeature2D(BaseFeature):
             profit_diff = np.diff(profit) * self.scale_output
 
         else:
-            profit_diff = np.zeros(data_point.OBSERVATION_LEN)
+            profit_diff = np.zeros(data_point.observation_len)
 
         return profit_diff.reshape(-1, 1)

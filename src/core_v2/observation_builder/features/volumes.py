@@ -17,14 +17,16 @@ class TradeVolumes(BaseFeature):
     def _get(self):
         data_point = self.context.get("data_point")
 
-        sell_vol = data_point.get_values("sell_vol", step_factor=self.step_factor)
-        buy_vol = data_point.get_values("buy_vol", step_factor=self.step_factor)
+        sell_vol_norm = data_point.get_values("sell_vol", step_factor=self.step_factor, num=-1, agg="sum")
+        buy_vol_norm = data_point.get_values("buy_vol", step_factor=self.step_factor, num=-1, agg="sum")
+        norm_values = np.concatenate([sell_vol_norm, buy_vol_norm])
+        norm_value = np.array(norm_values, dtype=np.float32).mean()
+
+        sell_vol = data_point.get_values("sell_vol", step_factor=self.step_factor, agg="sum")
+        buy_vol = data_point.get_values("buy_vol", step_factor=self.step_factor, agg="sum")
         feature = buy_vol - sell_vol
 
-        if self.step_factor > 1:
-            feature = np.sum(feature.reshape(-1, self.step_factor), axis=1)
-
-        feature = feature / np.abs(feature).mean()
+        feature = feature / norm_value
         return feature
 
 
@@ -35,13 +37,14 @@ class TradeCount(BaseFeature):
     def _get(self):
         data_point = self.context.get("data_point")
 
-        sell_vol = data_point.get_values("sell_num", step_factor=self.step_factor)
-        buy_vol = data_point.get_values("buy_num", step_factor=self.step_factor)
-        feature = buy_vol-sell_vol
+        sell_vol_norm = data_point.get_values("sell_num", step_factor=self.step_factor, num=-1, agg="sum")
+        buy_vol_norm = data_point.get_values("buy_num", step_factor=self.step_factor, num=-1, agg="sum")
+        norm_values = np.concatenate([sell_vol_norm, buy_vol_norm])
+        norm_value = np.array(norm_values, dtype=np.float32).mean()
 
-        if self.step_factor > 1:
-            feature = np.sum(feature.reshape(-1, self.step_factor), axis=1)
+        sell_vol = data_point.get_values("sell_num", step_factor=self.step_factor, agg="sum")
+        buy_vol = data_point.get_values("buy_num", step_factor=self.step_factor, agg="sum")
+        feature = buy_vol - sell_vol
 
-        feature = feature / np.abs(feature).mean()
-
+        feature = feature / norm_value
         return feature
