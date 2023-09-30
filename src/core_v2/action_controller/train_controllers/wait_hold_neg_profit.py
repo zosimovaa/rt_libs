@@ -23,49 +23,58 @@ wait и hold, но на реальных данных много шума и т�
 
 import numpy as np
 from .basic import BasicTrainController
+from core_v2.actions import BadAction, VoidAction, TradeAction
 
 
 class TrainControllerWaitHoldNegProfit(BasicTrainController):
     """Для WAIT и HOLD при отрицательном профите будем давать только отрицательную награду"""
 
     def __init__(self, *args, **kwargs):
+        self.edge = kwargs.pop("edge", 0)
         super().__init__(*args, **kwargs)
 
+
     def apply_action_wait(self):
+        ts = self.context.get("ts")
         is_open = self.context.get("is_open")
         if is_open:
-            return self.penalty
+            reward = self.penalty
+            result_action = BadAction(ts, is_open)
         else:
+            result_action = VoidAction(ts, is_open)
             if self.wait_scale:
-                # минуc добавляется т.к. при росте курса в отсутствии открытой операции нужно дать штраф.
                 reward = -1 * self._get_wh_reward() * self.wait_scale
 
-                trade_opposite = self.context.get("trade_opposite")
                 price = self.context.get("highest_bid")
-                profit_opposite = trade_opposite.get_profit(price)
+                profit_opposite = self.trade_opposite.get_profit(price)
 
-                if profit_opposite > 0:
+                if profit_opposite > self.edge:
                     reward = min(0, reward)
             else:
                 reward = 0
-            return reward
+
+        return reward, result_action
 
     def apply_action_hold(self):
+        ts = self.context.get("ts")
         is_open = self.context.get("is_open")
-        if not is_open:
-            return self.penalty
-        else:
-            if self.wait_scale:
-                reward = 0
-            else:
-                reward = self._get_wh_reward() * self.wait_scale
 
-                trade = self.context.get("trade")
+        if is_open:
+            result_action = VoidAction(ts, is_open)
+            if self.hold_scale:
+
+                reward = self._get_wh_reward() * self.hold_scale
                 price = self.context.get("highest_bid")
-                profit = trade.get_profit(price)
+                profit = self.trade.get_profit(price)
 
-                if profit < 0:
+                if profit < -self.edge:
                     reward = min(0, reward)
 
-            return reward
+            else:
+                reward = 0
+        else:
+            reward = self.penalty
+            result_action = BadAction(ts, is_open)
+
+        return reward, result_action
 

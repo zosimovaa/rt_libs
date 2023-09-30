@@ -15,7 +15,7 @@ class ProfitStateSingleFeature(BaseFeature):
     """Returns a matrix with normalized rates for different periods"""
 
     def __init__(self, *args, **kwargs):
-        self.edge = kwargs.pop("edge", 0.01)  # значение, при +/- котором считаем, что профит выше или ниже нормы
+        self.edge = kwargs.pop("edge", 0)  # значение, при +/- котором считаем, что профит выше или ниже нормы
         super().__init__(*args, **kwargs)
 
 

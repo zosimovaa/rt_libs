@@ -1,2 +1,3 @@
 from .basic import BasicTrainController
+from .wait_hold_neg_profit import TrainControllerWaitHoldNegProfit
 from .abstract import AbstractTrainControllerOpenSignal, AbstractTrainControllerOpenCloseSignal
