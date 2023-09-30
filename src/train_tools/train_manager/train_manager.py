@@ -211,7 +211,7 @@ class TrainManager:
         self.snapshot_lord.save_config(local_path, "config.yaml", params)
         self.snapshot_lord.save_model(local_path, "model", model, format="tf")
 
-    def get_train_stat(self, name="test", top_n=20):
+    def get_stat(self, name="test", top_n=20):
 
         frames, balances = self.history.get_data(name, "Balance")
         top_scores = np.flip(np.argsort(balances))[:top_n]
@@ -224,10 +224,17 @@ class TrainManager:
         for top_score_idx in top_scores:
             idx = frames[top_score_idx]
             sparsity = steps_opened[top_score_idx] / (steps_opened[top_score_idx] + steps_closed[top_score_idx])
+            model_path = self.get_train_results_path(idx)
+
+            if os.path.exists(os.path.abspath(model_path)):
+                file_status = "[+]"
+            else:
+                file_status = "[ ]"
+
             print(
-                f"Profit: {balances[top_score_idx]:<6.2%} | id: {idx:<4} | "
+                f"Profit: {balances[top_score_idx]:<6.2%} | id: {idx:<8} | "
                 f"Penalties: {penalties[top_score_idx]:<4} | TotalReward: {total_rewards[top_score_idx]:<9.2f}"
-                f"Sparsity {sparsity:<3.2f}"
+                f"Sparsity {sparsity:<3.2f} |  {file_status:<4}"
             )
 
     def drop_snapshots(self, name=ALIAS_TRAIN, threshold=0.09):
