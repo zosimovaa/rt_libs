@@ -41,29 +41,29 @@ class TrainPlot4:
                       row=1, col=1, secondary_y=False)
         # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
         # Добавляем график с количество штрафов на тренировочном датасете.
-        fig.add_trace(go.Scatter(name="Train", mode='lines', legendgroup="2",
+        fig.add_trace(go.Scatter(name="Train", mode='lines', legendgroup="1",
                                  line={"color": px.colors.qualitative.Set3[6], "width": 1}), #, "dash" :'dot'
                       row=1, col=1, secondary_y=True)
 
         # Добавляем график с количество штрафов на Тестовом датасете.
-        fig.add_trace(go.Scatter(name="Test", mode='lines', legendgroup="2",
+        fig.add_trace(go.Scatter(name="Test", mode='lines', legendgroup="1",
                                  line={"color": px.colors.qualitative.Set3[9], "width": 1}), #, "dash" :'dot'
                       row=1, col=1, secondary_y=True)
 
         # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
         # Добавляем график с количеством положительных и отрицательных торговых операций.
-        fig.add_trace(go.Scatter(name="PosTrades", mode='lines', legendgroup="3",
+        fig.add_trace(go.Scatter(name="PosTrades", mode='lines', legendgroup="2",
                                  line={"color": px.colors.qualitative.Dark24[19], "width": 1, "dash" :'dot'}),
                       row=2, col=1, secondary_y=False)
 
         # Добавляем график с количеством положительных и отрицательных торговых операций.
-        fig.add_trace(go.Scatter(name="NegTrades", mode='lines', legendgroup="3",
+        fig.add_trace(go.Scatter(name="NegTrades", mode='lines', legendgroup="2",
                                  line={"color": px.colors.qualitative.Dark24[3], "width": 1, "dash" :'dot'}),
                       row=2, col=1)
 
         # Добавляем график с оценкой разреженности.
-        fig.add_trace(go.Scatter(name="Sparsity", mode='lines', legendgroup="3",
+        fig.add_trace(go.Scatter(name="Sparsity", mode='lines', legendgroup="2",
                                  line={"color": px.colors.qualitative.Dark2[7], "width": 1}),
                       row=2, col=1, secondary_y=True)
 
