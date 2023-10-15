@@ -33,7 +33,8 @@ class ResultsBuffer:
 class TrainManager:
     """Позволяет итеративно запускать тренировку агента, контроллирует критерии остановки и организует проверку модели на тестовых данных"""
 
-    WORK_PATH = "./train_snapshots"
+    WORK_PATH = "/Volumes/toshiba/train_snapshots"
+    FALLBACK_PATH = "./train_snapshots"
     MODEL_DIR = "model"
     SNAPSHOT_DIR = "snapshots"
     TRAIN_RESULTS = "train_results"
@@ -137,6 +138,7 @@ class TrainManager:
                 if len(test_frames):
                     max_frame = test_frames.pop(0)
                 else:
+                    self.make_snapshot()
                     print(f"Finished at frame {frame}")
                     if self.ts is not None:
                         self.ts.send(f"Finished at frame {frame}")
@@ -158,8 +160,12 @@ class TrainManager:
         model = tf.keras.models.load_model(self.model_path)
 
         path = self.get_train_results_path(frame)
-        with open(path, "rb") as stream:
-            weights = pickle.load(stream)
+        try:
+            with open(path, "rb") as stream:
+                weights = pickle.load(stream)
+        except Exception as e:
+            print("Ошибка при чтении весов модели")
+            print(e)
 
         model.set_weights(weights)
         return model
@@ -167,8 +173,12 @@ class TrainManager:
     def save_weights(self, model, frame):
         weights = model.get_weights()
         path = self.get_train_results_path(frame)
-        with open(path, 'wb') as stream:
-            pickle.dump(weights, stream)
+        try:
+            with open(path, 'wb') as stream:
+                pickle.dump(weights, stream)
+        except Exception as e:
+            print("Ошибка при сохранении весов модели")
+            print(e)
 
     def make_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
         snapshot = {
@@ -179,8 +189,12 @@ class TrainManager:
         }
 
         path = self.get_snapshot_path(name)
-        with open(path, 'wb') as stream:
-            pickle.dump(snapshot, stream, protocol=pickle.HIGHEST_PROTOCOL)
+        try:
+            with open(path, 'wb') as stream:
+                pickle.dump(snapshot, stream, protocol=pickle.HIGHEST_PROTOCOL)
+        except Exception as e:
+            print("Ошибка при сохранении снепшота")
+            print(e)
 
     def load_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
         try:
