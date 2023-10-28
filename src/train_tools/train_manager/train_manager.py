@@ -31,26 +31,31 @@ class ResultsBuffer:
 
 
 class TrainManager:
+    # todo подумать над вынесением функций сохранения в отдельный класс
     """Позволяет итеративно запускать тренировку агента, контроллирует критерии остановки и организует проверку модели на тестовых данных"""
 
-    WORK_PATH = "/Volumes/toshiba/train_snapshots"
-    FALLBACK_PATH = "./train_snapshots"
-    MODEL_DIR = "model"
-    SNAPSHOT_DIR = "snapshots"
-    TRAIN_RESULTS = "train_results"
-    TRADE_SETUP_DIR = "trade_setups"
+    FALLBACK_PATH = "./"         # Путь на всякий сулчай, если сетевой недоступен
+    WORK_PATH = "/Volumes/toshiba"      # Целевой путь на сети, где много места
+    WORK_DIR = "train_data"             # Рабочая директория, куда все будет сливаться
+
+    MODEL = "model"                 # Директория для хранения модели
+    SNAPSHOTS = "snapshots"         # Директория для зранения снепшотов
+    TRAIN_RESULTS = "train_results" # Директория для хранения удачных моделей
+
     DEFAULT_SNAPSHOT_NAME = "last_state"
 
     ALIAS_TRAIN = "train"
     ALIAS_TEST = "test"
 
-    def __init__(self, agent, core, dpf, train_plot=None, alias="AliasTest"):
+    def __init__(self, agent, core, dpf, train_plot=None, alias="AliasTest", output_path=WORK_PATH):
         self.core = core
         self.dpf = dpf
         self.history = ResultsBuffer()
         self.train_plot = train_plot
         self.alias = alias
         self.agent = agent
+
+        self.path = self._init_path(output_path)
 
         self.test_every = 5000
         self.update_plot_every = 5000
@@ -61,20 +66,22 @@ class TrainManager:
 
         self.ts = TelegramSend(alias)
 
-        self.model_path = self.create_dir(self.MODEL_DIR)
+        self.model_path = self.get_path(self.MODEL)
 
-        # save_model(agent.model, self.model_path, overwrite=True, save_format='keras')
         tf.keras.models.save_model(agent.model, self.model_path, overwrite=True)
 
-    def create_dir(self, *args):
-        """Проверяет наличие директории и при необходимости ее создает"""
-        path = os.path.join(self.WORK_PATH, self.alias, *list(map(str, args)))
-        if not os.path.exists(path):
-            os.makedirs(path)
-        return path
+    def _init_path(self, path):
+        if os.path.exists(path):
+            work_path = path
+        else:
+            work_path = self.FALLBACK_PATH
+        print(f"Work path: {work_path}")
+
+        return work_path
 
     @staticmethod
     def get_stop_frames(current_frame, max_frames, stop_frame):
+        """Рассчитывает стоп-фреймы для проверки модели или отрисовки графика"""
         stop_frames = list(
             range(
                 max(stop_frame, int(np.ceil(current_frame / stop_frame) * stop_frame)),
@@ -112,22 +119,22 @@ class TrainManager:
                 if score.get("Balance", 0) > self.save_test_since:
                     self.save_weights(self.agent.model, frame)
 
-            ## Сохраняем модель
-            #aliases = self.history.get_aliases()
-            #balances = []
-            #for alias in aliases:
+            # Сохраняем модель
+            # aliases = self.history.get_aliases()
+            # balances = []
+            # for alias in aliases:
             #    frames, scores = self.history.get_data(alias, "Balance")
             #    balances.append(scores[-1])
-            #if np.mean(balances) > save_since:
+            # if np.mean(balances) > save_since:
             #    self.save_weights(self.agent.model, frame)
 
             # Делаем снепшот
             if frame % self.snapshot_every == 0:
-                self.make_snapshot(str(frame))
+                self.make_snapshot(frame)
 
             # Делаем сохранение последнего стейта
             if frame % self.save_state_every == 0:
-                self.make_snapshot()
+                self.make_snapshot(self.DEFAULT_SNAPSHOT_NAME)
 
             # Обновляем график
             if self.train_plot is not None and frame % self.update_plot_every == 0:
@@ -138,47 +145,52 @@ class TrainManager:
                 if len(test_frames):
                     max_frame = test_frames.pop(0)
                 else:
-                    self.make_snapshot()
+                    self.make_snapshot(self.DEFAULT_SNAPSHOT_NAME)
                     print(f"Finished at frame {frame}")
                     if self.ts is not None:
                         self.ts.send(f"Finished at frame {frame}")
                     break
 
-    def get_snapshot_path(self, name):
-        dir_path = self.create_dir(self.SNAPSHOT_DIR)
-        file_path = os.path.join(dir_path, "snapshot." + str(name) + ".pkl")
-        return file_path
+    def get_path(self, *args):
+        """Проверяет наличие директории и при необходимости ее создает"""
+        path = os.path.join(self.path, self.WORK_DIR, self.alias, *list(map(str, args)))
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
 
-    def get_train_results_path(self, name):
-        dir_path = self.create_dir(self.TRAIN_RESULTS)
-        file_path = os.path.join(dir_path, "weights." + str(name) + ".pkl")
-        return file_path
+    def _save_file(self, prefix, name, data):
+        dir_path = self.get_path(prefix)
+        file_path = os.path.join(dir_path, str(name) + ".pkl")
+        try:
+            with open(file_path, 'wb') as stream:
+                pickle.dump(data, stream, protocol=pickle.HIGHEST_PROTOCOL)
+        except Exception as e:
+            print(f"Ошибка при сохранении файла {file_path}")
+            print(e)
+
+    def _load_file(self, prefix, name):
+        dir_path = self.get_path(prefix)
+        file_path = os.path.join(dir_path, str(name) + ".pkl")
+        try:
+            with open(file_path, "rb") as stream:
+                data = pickle.load(stream)
+        except Exception as e:
+            print(f"Ошибка при чтении файла {file_path}")
+            print(e)
+            data = None
+        return data
 
     def get_model(self, frame):
         """Создает новую модель из базовой и загружает в нее веса из указанного фрейма"""
-        # model = load_model(self.model_path, compile=True)
         model = tf.keras.models.load_model(self.model_path)
-
-        path = self.get_train_results_path(frame)
-        try:
-            with open(path, "rb") as stream:
-                weights = pickle.load(stream)
-        except Exception as e:
-            print("Ошибка при чтении весов модели")
-            print(e)
-
-        model.set_weights(weights)
+        weights = self._load_file(self.TRAIN_RESULTS, frame)
+        if weights is not None:
+            model.set_weights(weights)
         return model
 
     def save_weights(self, model, frame):
         weights = model.get_weights()
-        path = self.get_train_results_path(frame)
-        try:
-            with open(path, 'wb') as stream:
-                pickle.dump(weights, stream)
-        except Exception as e:
-            print("Ошибка при сохранении весов модели")
-            print(e)
+        self._save_file(self.TRAIN_RESULTS, frame, weights)
 
     def make_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
         snapshot = {
@@ -187,43 +199,32 @@ class TrainManager:
             "weights_model": self.agent.model.get_weights(),
             "weights_model_target": self.agent.model_target.get_weights()
         }
-
-        path = self.get_snapshot_path(name)
-        try:
-            with open(path, 'wb') as stream:
-                pickle.dump(snapshot, stream, protocol=pickle.HIGHEST_PROTOCOL)
-        except Exception as e:
-            print("Ошибка при сохранении снепшота")
-            print(e)
+        self._save_file(self.TRAIN_RESULTS, name, snapshot)
 
     def load_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
-        try:
-            path = self.get_snapshot_path(name)
-            with open(path, "rb") as stream:
-                snapshot = pickle.load(stream)
-
-        except Exception as e:
-            print(e)
-            print("Снепшот не найден или поврежден. Что-то прошло не так")
-        else:
+        snapshot = self._load_file(self.TRAIN_RESULTS, name)
+        if snapshot is not None:
             self.history = snapshot["history"]
             self.agent.load_config(snapshot["agent_config"])
             self.agent.model.set_weights(snapshot["weights_model"])
             self.agent.model_target.set_weights(snapshot["weights_model_target"])
             print(f"Снепшот успешно загружен на эпизоде {self.agent.episode_count}")
 
-    def make_trade_config(self, params, model_id, suffix=None):
-        raise NotImplemented("Не переделано на отсутствие snapshot lord")
-        model = self.get_model(model_id)
-        local_path = [self.TRADE_SETUP_DIR]
+    def drop_snapshots(self, name=ALIAS_TRAIN, threshold=0.09):
+        frames, balances = self.history.get_data(name, "Balance")
+        frames = np.array(frames)
+        idx_filtered = np.argwhere(np.array(balances) < threshold)
 
-        if suffix is None:
-            local_path.append(self.alias + "_id" + str(model_id))
-        else:
-            local_path.append(self.alias + "_id" + str(model_id) + "_" + suffix)
-
-        self.snapshot_lord.save_config(local_path, "config.yaml", params)
-        self.snapshot_lord.save_model(local_path, "model", model, format="tf")
+        dropped = []
+        for idx in idx_filtered:
+            dir_path = self.get_path(self.TRAIN_RESULTS)
+            weight_to_delete = os.path.join(dir_path, str(frames[idx][0]) + ".pkl")
+            path = os.path.abspath(weight_to_delete)
+            if os.path.isfile(path):
+                file_stats = os.stat(path)
+                dropped.append(file_stats.st_size / (1024 * 1024))
+                os.remove(path)
+        print(f"{len(dropped)} files with a capacity of {np.round(sum(dropped), 2)} Mb were deleted")
 
     def get_stat(self, name="test", top_n=20):
 
@@ -238,8 +239,9 @@ class TrainManager:
         for top_score_idx in top_scores:
             idx = frames[top_score_idx]
             sparsity = steps_opened[top_score_idx] / (steps_opened[top_score_idx] + steps_closed[top_score_idx])
-            model_path = self.get_train_results_path(idx)
 
+            dir_path = self.get_path(self.TRAIN_RESULTS)
+            model_path = os.path.join(dir_path, str(idx) + ".pkl")
             if os.path.exists(os.path.abspath(model_path)):
                 file_status = "[+]"
             else:
@@ -250,18 +252,3 @@ class TrainManager:
                 f"Penalties: {penalties[top_score_idx]:<4} | TotalReward: {total_rewards[top_score_idx]:<9.2f}"
                 f"Sparsity {sparsity:<3.2f} |  {file_status:<4}"
             )
-
-    def drop_snapshots(self, name=ALIAS_TRAIN, threshold=0.09):
-        frames, balances = self.history.get_data(name, "Balance")
-        frames = np.array(frames)
-        idx_filtered = np.argwhere(np.array(balances) < threshold)
-
-        dropped = []
-        for idx in idx_filtered:
-            weight_to_delete = self.get_train_results_path(frames[idx][0])
-            path = os.path.abspath(weight_to_delete)
-            if os.path.isfile(path):
-                file_stats = os.stat(path)
-                dropped.append(file_stats.st_size / (1024 * 1024))
-                os.remove(path)
-        print(f"{len(dropped)} files with a capacity of {np.round(sum(dropped), 2)} Mb were deleted")
