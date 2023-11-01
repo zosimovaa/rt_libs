@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from data_point import DataPointFactory, DataPointFactoryError
+from core_v1.data_point import DataPointFactory
 
 
 class DataPointFactoryTestCase(unittest.TestCase):

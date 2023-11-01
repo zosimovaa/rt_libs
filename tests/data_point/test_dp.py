@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 import unittest
-from data_point import DataPoint
+from core_v1.data_point import DataPoint
 
 
 class MainDataPointTestCase(unittest.TestCase):

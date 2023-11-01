@@ -3,7 +3,7 @@ import numpy as np
 from collections import deque
 
 from tests.test_dataset import TestDatasetGenerator_v2
-from src.data_point import DataPointFactory, DataPoint
+from core_v1.data_point import DataPointFactory
 from src.core_v2.context import Context
 from src.core_v2.observation_builder.features import ProfitFeature
 from src.core_v2.action_controller.trade_controllers import TrainController4Actions

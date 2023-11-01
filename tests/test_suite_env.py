@@ -1,5 +1,5 @@
 from src.core_v1.actions import TradeAction
-from src.data_point import DataPointFactory
+from core_v1.data_point import DataPointFactory
 
 
 class SimpleTestSuiteEnv:

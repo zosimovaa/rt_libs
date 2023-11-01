@@ -8,7 +8,7 @@ import numpy as np
 
 from tests.test_dataset import TestDatasetGenerator
 
-from src.data_point import DataPointFactory
+from core_v1.data_point import DataPointFactory
 from src.core_v1.context import Context
 from src.core_v1.actions import TradeAction, BadAction
 from src.core_v1.action_controller import ActionControllerDiffReward

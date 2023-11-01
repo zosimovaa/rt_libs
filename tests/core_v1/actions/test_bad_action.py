@@ -4,7 +4,7 @@ import unittest
 
 from tests.test_dataset import TestDatasetGenerator
 
-from src.data_point import DataPoint
+from core_v1.data_point import DataPoint
 from src.core_v1.context import BasicContext
 from src.core_v1.actions import BadAction
 
