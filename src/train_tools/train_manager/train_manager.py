@@ -54,6 +54,7 @@ class TrainManager:
         self.train_plot = train_plot
         self.alias = alias
         self.agent = agent
+        self.test_frames = []
 
         self.path = self._init_path(output_path)
 
@@ -92,14 +93,14 @@ class TrainManager:
     def go(self, max_frames=100000):
         current_frame = self.agent.frame_count
 
-        test_frames = self.get_stop_frames(current_frame, max_frames, self.test_every)
+        self.test_frames = self.get_stop_frames(current_frame, max_frames, self.test_every)
         snapshot_frames = self.get_stop_frames(current_frame, max_frames, self.snapshot_every)
         update_plot_frames = self.get_stop_frames(current_frame, max_frames, self.update_plot_every)
         save_state_frames = self.get_stop_frames(current_frame, max_frames, self.save_state_every)
 
-        test_frames = sorted(set(test_frames + snapshot_frames + update_plot_frames + save_state_frames))
+        self.test_frames = sorted(set(self.test_frames + snapshot_frames + update_plot_frames + save_state_frames))
 
-        max_frame = test_frames.pop(0)
+        max_frame = self.test_frames.pop(0)
         while True:
             self.agent.train(max_frames=max_frame)
             frame = self.agent.frame_count
@@ -142,8 +143,8 @@ class TrainManager:
 
             # Проверяем условие выхода
             if frame >= max_frame:
-                if len(test_frames):
-                    max_frame = test_frames.pop(0)
+                if len(self.test_frames):
+                    max_frame = self.test_frames.pop(0)
                 else:
                     self.make_snapshot(self.DEFAULT_SNAPSHOT_NAME)
                     print(f"Finished at frame {frame}")
