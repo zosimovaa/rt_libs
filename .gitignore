@@ -2,7 +2,7 @@
 src/z_core/__pycache__
 src/z_core/observation_builder/__pycache__
 src/z_core/market_providers/__pycache__
-src/data_point/__pycache__
+src/core_v1/data_point/__pycache__
 src/train_tools/__pycache__
 src/train_tools/sandbox/.ipynb_checkpoints
 src/rl/__pycache__
@@ -28,7 +28,7 @@ src/core_v1/observation_builder/precompute/__pycache__/orderbook_volumes.cpython
 src/core_v1/action_controller/__pycache__
 src/core_v1/observation_builder/features2/__pycache__
 src/core_v1/observation_builder/features2/notebooks/.ipynb_checkpoints
-src/data_point/notebooks/.ipynb_checkpoints
+src/core_v1/data_point/notebooks/.ipynb_checkpoints
 src/core_v1/observation_builder/features/__pycache__
 src/core_v1/observation_builder/__pycache__
 src/core_v1/actions/__pycache__
