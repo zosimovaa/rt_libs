@@ -50,45 +50,44 @@ class DataPoint:
         # Так это последняя точка данных, но future_points может ее сместить ближе к началу.
         self.cursor = self.tail_points - 1  # Курсор про номер позии
 
-    def _get_num(self, step_factor, num):
-        "Вычисляет количество точек наблюдения и возволяет в большей части случаев исключить эту логику из потребителя"
+    def _get_num(self, period, num):
+        """Вычисляет количество точек наблюдения, необходимое для формирования ответа"""
+        if period % self.period > 0:
+            raise Exception(f"Bad period - {period}. Data period is  {self.period}")
+
         if num is None:
             # Базовый сценарий
-            return self.observation_len
+            return int(self.observation_len * period/self.period)
         elif num == -1:
             # Вычисление позволяет передать максимальное количество точек для вычисления value со step_factor выше 1.
-            return self.tail_points // (self.observation_len * step_factor) * self.observation_len
+            return int(self.tail_points / (self.observation_len * period//self.period) * self.observation_len)
         else:
             return num
 
-    def get_index_slice(self, step_factor=1, num=None):
-        """Возвращает все курсоры, в том числе расположенные между реперными точками"""
-        num = self._get_num(step_factor, num)
-
+    def get_index_slice(self, period=1, num=None):
+        """Возвращает все индексы, в том числе расположенные между реперными точками"""
+        num = self._get_num(period, num)
         # верхний индекс на единицу выше, т.к. это элемент не захватывается при слайсинге
         up_bound = self.cursor + 1
-        low_bound = up_bound - num * step_factor
-
+        low_bound = up_bound - num
         return low_bound, up_bound
 
-    def get_values(self, name, step_factor=1, num=None, agg="average"):
-        """Возвращает значений точек данных заданной длины и агрегированное для step_factor выше 1
-        """
-        num = self._get_num(step_factor, num)
-        low_bound, up_bound = self.get_index_slice(step_factor=step_factor, num=num)
-
+    def get_values(self, name, period=1, num=None, agg="average"):
+        """Возвращает значения точек данных заданной длины и агрегированное для step_factor выше 1"""
+        #num = self._get_num(period, num)   #здесь мы должны получить все имеющиеся точки данных "от сих до сих", чтобы потом агрегировать в запрошенные значения.
+        low_bound, up_bound = self.get_index_slice(period=period, num=num)
         col_idx = self.columns.tolist().index(name)
         values = self.data[low_bound: up_bound, col_idx]
-        if step_factor > 1:
+        if period/self.period > 1:
             # оптимизация производительности
-            values = getattr(np, agg)(values.reshape(-1, step_factor), axis=1)
+            values = getattr(np, agg)(values.reshape(-1, int(period/self.period)), axis=1)
         return values
 
-    def get_value(self, name, step_factor=1, agg="average"):
+    def get_value(self, name, period=1, agg="average"):
         """Метод возвращает одно значение агрегированное для step_factor выше 1"""
         col_idx = self.columns.tolist().index(name)
-        value = self.data[-1 * step_factor, col_idx]
-        if step_factor > 1:
+        value = self.data[-1 * int(period/self.period), col_idx]
+        if period/self.period > 1:
             value = np.mean(value)
         return value
 
@@ -98,16 +97,16 @@ class DataPoint:
     def get_current_index(self):
         return self.indexes[self.cursor]
 
-    def get_points(self, step_factor=1, num=None):
+    def get_points(self, period=1, num=None):
         """Возвращает индексы по реперным точкам - т.е. будет соответствовать количеству запрошенных точек"""
-        num = self._get_num(step_factor, num)
+        num = self._get_num(period, num)
 
         if num >= 0:
             up_bound = self.cursor + 1
-            low_bound = up_bound - (num - 1) * step_factor - 1
+            low_bound = up_bound - (num - 1) * int(period/self.period) - 1
         else:
-            low_bound = self.cursor + step_factor
-            up_bound = low_bound - num * step_factor
+            low_bound = self.cursor + int(period/self.period)
+            up_bound = low_bound - int(num * period/self.period)
 
-        idxs = self.indexes[low_bound: up_bound: step_factor]
+        idxs = self.indexes[low_bound: up_bound: int(period/self.period)]
         return idxs
