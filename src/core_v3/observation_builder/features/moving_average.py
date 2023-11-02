@@ -22,7 +22,6 @@ class MovingAverageFeature(BaseFeature):
     def __init__(self, *args, **kwargs):
         self.ma_points = kwargs.pop("ma_points", 1)
         self.feature = kwargs.pop("feature", "highest_bid")
-
         super().__init__(*args, **kwargs)
 
     def _get(self):
@@ -30,7 +29,7 @@ class MovingAverageFeature(BaseFeature):
         num = data_point.observation_len + self.ma_points - 1
         current_value = data_point.get_value(self.feature)
 
-        values = data_point.get_values(self.feature, step_factor=self.period, num=num)
+        values = data_point.get_values(self.feature, period=self.period, num=num)
         feature = moving_average(values, n=self.ma_points)
 
         # нормализуем.... надо протестить как это будет выглядеть

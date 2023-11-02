@@ -23,10 +23,10 @@ class ProfitFeature(BaseFeature):
         trade = self.context.get("trade")
 
         if is_open:
-            timestamps = data_point.get_points(step_factor=self.period)
+            timestamps = data_point.get_indexes(period=self.period)
             mask = (timestamps >= trade.open_ts) & (timestamps <= trade.close_ts)
 
-            values = data_point.get_values(self.price, step_factor=self.period)
+            values = data_point.get_values(self.price, period=self.period)
 
             feature = values / trade.open_price - 1 - trade.market_fee
             feature = feature * mask
@@ -50,11 +50,11 @@ class ProfitDiffFeature(BaseFeature):
         trade = self.context.get("trade")
 
         if trade_state:
-            timestamps = data_point.get_points(step_factor=self.period, num=data_point.observation_len)
+            timestamps = data_point.get_indexes(period=self.period)
             mask = (timestamps > trade.open_ts) & (timestamps <= trade.close_ts)
-            
-            values = data_point.get_values(self.price, step_factor=self.period, num=data_point.observation_len + self.period)
-            values = np.average(values.reshape(-1, self.period), axis=1)
+
+            # в DiffFeature нужна +1 точка, чтобы рассчитать разницу.
+            values = data_point.get_values(self.price, period=self.period, num=data_point.observation_len + 1)
 
             feature = values / trade.open_price - 1 - trade.market_fee
             feature = np.diff(feature) * mask

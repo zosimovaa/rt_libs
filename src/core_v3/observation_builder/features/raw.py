@@ -19,7 +19,7 @@ class RawValueFeature(BaseFeature):
 
     def _get(self):
         data_point = self.context.get("data_point")
-        feature = data_point.get_value(self.name, step_factor=self.period)
+        feature = data_point.get_value(self.name, period=self.period)
         return np.array([feature], dtype=np.float32)
 
     def __str__(self):

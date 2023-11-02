@@ -18,13 +18,10 @@ class OrderbookDiffFeature(BaseFeature):
     def _get(self):
         data_point = self.context.get("data_point")
 
-        asks = data_point.get_values("asks_" + str(self.level), step_factor=self.period)
-        bids = data_point.get_values("bids_" + str(self.level), step_factor=self.period)
+        asks = data_point.get_values("asks_" + str(self.level), period=self.period, agg="sum")
+        bids = data_point.get_values("bids_" + str(self.level), period=self.period, agg="sum")
 
         feature = bids - asks
-
-        if self.period > 1:
-            feature = np.sum(feature.reshape(-1, self.period), axis=1)
 
         feature = feature / np.abs(feature).mean()
         return feature

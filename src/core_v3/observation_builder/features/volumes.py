@@ -17,13 +17,13 @@ class TradeVolumes(BaseFeature):
     def _get(self):
         data_point = self.context.get("data_point")
 
-        sell_vol_norm = data_point.get_values("sell_vol", step_factor=self.period, num=-1, agg="sum")
-        buy_vol_norm = data_point.get_values("buy_vol", step_factor=self.period, num=-1, agg="sum")
+        sell_vol_norm = data_point.get_values("sell_vol", period=self.period, num=-1, agg="sum")
+        buy_vol_norm = data_point.get_values("buy_vol", period=self.period, num=-1, agg="sum")
         norm_values = np.concatenate([sell_vol_norm, buy_vol_norm])
         norm_value = np.array(norm_values, dtype=np.float32).mean()
 
-        sell_vol = data_point.get_values("sell_vol", step_factor=self.period, agg="sum")
-        buy_vol = data_point.get_values("buy_vol", step_factor=self.period, agg="sum")
+        sell_vol = data_point.get_values("sell_vol", period=self.period, agg="sum")
+        buy_vol = data_point.get_values("buy_vol", period=self.period, agg="sum")
         feature = buy_vol - sell_vol
 
         feature = feature / norm_value
@@ -37,13 +37,13 @@ class TradeCount(BaseFeature):
     def _get(self):
         data_point = self.context.get("data_point")
 
-        sell_vol_norm = data_point.get_values("sell_num", step_factor=self.period, num=-1, agg="sum")
-        buy_vol_norm = data_point.get_values("buy_num", step_factor=self.period, num=-1, agg="sum")
+        sell_vol_norm = data_point.get_values("sell_num", period=self.period, num=-1, agg="sum")
+        buy_vol_norm = data_point.get_values("buy_num", period=self.period, num=-1, agg="sum")
         norm_values = np.concatenate([sell_vol_norm, buy_vol_norm])
         norm_value = np.array(norm_values, dtype=np.float32).mean()
 
-        sell_vol = data_point.get_values("sell_num", step_factor=self.period, agg="sum")
-        buy_vol = data_point.get_values("buy_num", step_factor=self.period, agg="sum")
+        sell_vol = data_point.get_values("sell_num", period=self.period, agg="sum")
+        buy_vol = data_point.get_values("buy_num", period=self.period, agg="sum")
         feature = buy_vol - sell_vol
 
         feature = feature / norm_value

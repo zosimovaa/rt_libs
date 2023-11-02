@@ -18,7 +18,6 @@ class ProfitStateSingleFeature(BaseFeature):
         self.edge = kwargs.pop("edge", 0)  # значение, при +/- котором считаем, что профит выше или ниже нормы
         super().__init__(*args, **kwargs)
 
-
     def _get(self):
         profit = self.context.get("profit")
         if profit >= self.edge:

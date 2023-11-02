@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 class BaseFeature(ContextConsumer):
     """Базовый класс, рассчитывает значения на лету"""
-    ATTRIBUTES_NAMES = ("step_factor", "level", "name", "feature", "ma_points")
+    ATTRIBUTES_NAMES = ("period", "level", "name", "feature", "ma_points")
 
-    def __init__(self, alias, period=300, scale_output=1, clip_output=0, normalization=False):
+    def __init__(self, alias, period=1, scale_output=1, clip_output=0, normalization=False):
         super().__init__(alias)
         self.period = period
         self.scale_output = scale_output

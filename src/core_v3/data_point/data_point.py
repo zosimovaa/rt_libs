@@ -97,16 +97,9 @@ class DataPoint:
     def get_current_index(self):
         return self.indexes[self.cursor]
 
-    def get_points(self, period=1, num=None):
+    def get_indexes(self, period=1, num=None):
         """Возвращает индексы по реперным точкам - т.е. будет соответствовать количеству запрошенных точек"""
         num = self._get_num(period, num)
-
-        if num >= 0:
-            up_bound = self.cursor + 1
-            low_bound = up_bound - (num - 1) * int(period/self.period) - 1
-        else:
-            low_bound = self.cursor + int(period/self.period)
-            up_bound = low_bound - int(num * period/self.period)
-
-        idxs = self.indexes[low_bound: up_bound: int(period/self.period)]
-        return idxs
+        low_bound, up_bound = self.get_index_slice(period=period, num=num)
+        values = self.indexes[low_bound: up_bound: int(period/self.period)]
+        return values
