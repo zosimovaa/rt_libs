@@ -8,7 +8,7 @@ ObservationBuilderClass
 
 
 """
-from core_v1.observation_builder.deprecated.builder_2inp import ObservationBuilder2Inp
+from .deprecated.builder_2inp import ObservationBuilder2Inp
 from .multiple_inputs_builder import ObservationBuilderInput
 
 
