@@ -5,7 +5,7 @@ import numpy as np
 
 from ..action_router import Router4Action
 
-from core_v2.actions import BadAction, VoidAction, TradeAction
+from ...actions import BadAction, VoidAction, TradeAction
 
 
 class BasicTrainController(Router4Action):

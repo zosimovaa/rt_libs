@@ -95,7 +95,7 @@ class DataPoint:
     def get_current_cursor(self):
         return self.cursor
 
-    def get_current_index(self):
+    def get_index(self):
         return self.indexes[self.cursor]
 
     def get_points(self, step_factor=1, num=None):

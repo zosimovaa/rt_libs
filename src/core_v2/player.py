@@ -60,7 +60,7 @@ class Player:
 
             step_log = {
                 "step": step,
-                "idx": data_point.get_current_index(),
+                "idx": data_point.get_index(),
                 "observation": obs_transformed,
                 "highest_bid": self.core.context.get("highest_bid"),
                 "action": action,

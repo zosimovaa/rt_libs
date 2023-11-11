@@ -1,6 +1,6 @@
 import numpy as np
 from .basic import BasicTrainController
-from core_v2.actions import BadAction, VoidAction, TradeAction
+from ...actions import BadAction, VoidAction, TradeAction
 
 class TrainControllerWHProfit(BasicTrainController):
     """Для WAIT и HOLD при отрицательном профите будем давать только отрицательную награду, пири положительно - только положительную"""

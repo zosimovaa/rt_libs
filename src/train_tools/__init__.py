@@ -6,7 +6,7 @@ from .train_plot import TrainPlot4
 
 from .plot_and_go import plot_and_go
 from .distribution_analysis import distribution_analysis
-from .get_max_step_factor import get_max_step_factor
+from .get_max_period import get_max_period
 
 #from .train_plot import TrainPlot
 

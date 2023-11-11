@@ -14,6 +14,7 @@ class VoidAction(CorrectAction):
     def __init__(self, ts, is_open, info=None):
         CorrectAction.__init__(self, ts, is_open, info=info)
 
+
 class FailAction(CorrectAction):
     """The class describes the correct action applied by a neural network."""
     def __init__(self, ts, is_open, info=None):

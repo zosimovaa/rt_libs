@@ -28,7 +28,7 @@ class Context:
     def set_dp(self, data_point):
         self.data_point = data_point
 
-        ts = data_point.get_current_index()
+        ts = data_point.get_index()
         self.set("ts", ts)
         for key in self.STORED_PARAMS:
             try:

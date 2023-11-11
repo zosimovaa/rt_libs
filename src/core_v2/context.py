@@ -40,7 +40,7 @@ class Context(metaclass=Singleton):
         self.put("data_point", data_point)
 
         # 2. Set ts 1300ms
-        ts = data_point.get_current_index()
+        ts = data_point.get_index()
         self.put("ts", ts)
 
         # 3. Extract stored params 4300ms

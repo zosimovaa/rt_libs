@@ -29,22 +29,22 @@ class BaseFeatureWithHistory(BaseFeature):
         # First Observation Request
         if self.data is None:
             self.data = self._init_data(dp)
-            self.last_update = dp.get_current_index()
+            self.last_update = dp.get_index()
 
         # There were data losses
-        elif dp.get_current_index() > self.last_update + dp.period:
+        elif dp.get_index() > self.last_update + dp.period:
             self.data = self._init_data(dp)
-            self.last_update = dp.get_current_index()
+            self.last_update = dp.get_index()
 
         # Rebuild observation
-        elif dp.get_current_index() == self.last_update:
+        elif dp.get_index() == self.last_update:
             pass
 
         # Request next point
         else:
             point = self._build_point(dp)
             self.data.append(point)
-            self.last_update = dp.get_current_index()
+            self.last_update = dp.get_index()
 
         data = np.array(self.data)
 

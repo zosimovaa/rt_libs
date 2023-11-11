@@ -11,13 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class DataPointFactory:
+    """DataPointFactory из core v3 работает с периодом"""
     def __init__(self, dataset, step_size=1, offset=10, observation_len=10, future_points=0, alias=None):
         """
         Все параметры указываются в единицах, без привязки к шагу датасета
         :param dataset: pandas dataframe с данными
-        :param step_size: шаг по датасету iloc. Указывается в единицах
-        :param offest: 'хвост' с историческими данными - количество точек, которые надо захватить.
-        Рассчитывается как произведение n_observation на max(scale_factor)
+        :param step_size: шаг по датасету. Указывается в единицах индекса.
+        :param offest: 'хвост' с историческими данными - количество точек, которые надо захватить,
+        чтобы сформировать observation для любого period.
         :param observation_len: количество точек в наблюдении
         :param future_points: количество точек в будущем
         """
@@ -29,18 +30,24 @@ class DataPointFactory:
         self.observation_len = observation_len  # Длина наблюдения. Не может быть  больше offset
         self.future_points = future_points      # Количество точек из будущего, которые захватим (стоят правее курсора)
         self.offset = offset                    # Исторический хвост, который всегда прицепляем к текущему курсору
-        self.cursor = offset                    # Текущий шаг по датасету. Начальное значенеи равно оффсету
-        self.step_size = step_size              # Шаг по датасету.
+        self.cursor = offset                    # Текущий шаг по датасету. Начальное значение равно оффсету
+        self.step_size = step_size              # Размер шага по датасету (в единицах индекса)
+
+        if len(self.indexes) > 1:
+            self.data_period = self.indexes[1] - self.indexes[0]
+            if step_size % self.data_period != 0:
+                raise Exception(f"Data period ({self.data_period}) is not multiplicity to Step size ({step_size}). Take another step size value")
+
+        else:
+            self.data_period = 1
+
+        self.cursor_step_size = int(step_size / self.data_period)  # Шаг по датасету.
 
         self.done = False                       # Признак достижения конца датасета
         self.alias = alias                      # Возможно, это рудимент, который уже можно удалить
 
-        self.max_cursor = self.data.shape[0] - self.future_points - 1 # -1 - т.к. индексация с нуля
-        self.max_steps = (self.max_cursor - self.offset) // self.step_size + 1
-
-
-
-        self.reset()
+        self.max_cursor = self.data.shape[0] - self.future_points - 1  # -1 - т.к. индексация с нуля
+        self.max_steps = (self.max_cursor - self.offset) // self.cursor_step_size + 1
 
     def reset(self):
         """Сброс в начальное состояние"""
@@ -54,25 +61,29 @@ class DataPointFactory:
 
     def get_current_step(self):
         """ Возвращает текущий data_point"""
-        data = self.data[self.cursor - self.offset : self.cursor + self.future_points, :]
-        indexes = self.indexes.values[self.cursor - self.offset: self.cursor + self.future_points]
+        low_bound = self.cursor - self.offset
+        up_bound = self.cursor + self.future_points
+
+        data = self.data[low_bound: up_bound, :]
+        indexes = self.indexes.values[low_bound: up_bound]
 
         data_point = DataPoint(
             data,
             self.columns,
             indexes,
             future_points=self.future_points,
-            observation_len=self.observation_len
+            observation_len=self.observation_len,
+            step_size=self.step_size
         )
         return data_point
 
     def get_next_step(self):
         """Переводит курсор на величину шага и возвращает data_point"""
         if not self.done:
-            self.cursor = self.cursor + self.step_size
+            self.cursor = min(self.cursor + self.cursor_step_size, self.max_cursor)
 
-        if self.cursor >= self.max_cursor:
-            self.done = True
+            if self.cursor == self.max_cursor:
+                self.done = True
 
         data_point = self.get_current_step()
         return data_point, self.done

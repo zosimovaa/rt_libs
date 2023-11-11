@@ -23,7 +23,7 @@ wait и hold, но на реальных данных много шума и т�
 
 import numpy as np
 from .basic import BasicTrainController
-from core_v2.actions import BadAction, VoidAction, TradeAction
+from ...actions import BadAction, VoidAction, TradeAction
 
 
 class TrainControllerWaitHoldNegProfit(BasicTrainController):

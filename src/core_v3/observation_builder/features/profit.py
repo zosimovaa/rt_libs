@@ -43,6 +43,7 @@ class ProfitDiffFeature(BaseFeature):
     def __init__(self, *args, **kwargs):
         self.price = kwargs.pop("price", "highest_bid")
         super().__init__(*args, **kwargs)
+        raise Exception('Требует проверки и доработки')
 
     def _get(self):
         trade_state = self.context.get("is_open")
