@@ -16,7 +16,7 @@ from .components.replay_buffer import ReplayBuffer
 logger = logging.getLogger(__name__)
 
 
-class DQNAgent:
+class DQNAgentSmartRandom:
     EXPORT_FORBIDDEN_ATTRIBUTES = ("model", "model_target", "optimizer")
 
     def __init__(self, env, model, model_target):
@@ -129,10 +129,17 @@ class DQNAgent:
 
     def act(self, state):
         # Use epsilon-greedy for exploration
-        if self.frame_count < self.epsilon_random_frames or self.epsilon > np.random.rand(1)[0]:
+        if self.frame_count < self.epsilon_random_frames:
             # Take random action
             # action = np.random.choice(self.action_size) <- на CPU работает медленнее
             action = random.sample(range(self.action_size), 1)[0]
+        elif self.epsilon > np.random.rand(1)[0]:
+            is_open = self.env.core.context.get("is_open")
+            if is_open:
+                action = random.sample([2, 3], 1)[0]
+            else:
+                action = random.sample([0, 1], 1)[0]
+
         else:
             state_tensor = self._sample_transformer(state)
             # Take best action

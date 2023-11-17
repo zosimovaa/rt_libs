@@ -7,6 +7,8 @@ import numpy as np
 
 class Player:
 
+    CLOSE_ACTION_CODE = 3
+
     def __init__(self, env_core, model, dataset_handler):
         self.core = env_core
         self.model = model
@@ -88,7 +90,8 @@ class Player:
         # Close last trade
         if close_last and len(self.trade_actions_history):
             if self.trade_actions_history[-1].is_open:
-                self.core.action_controller.apply_action_close()
+                #self.core.action_controller.apply_action_close()
+                self.core.apply_action(self.CLOSE_ACTION_CODE)
 
         if render:
             self.render_plot()

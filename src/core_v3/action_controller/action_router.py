@@ -45,3 +45,36 @@ class Router4Action(ContextConsumer):
 
     def get_action_space(self):
         return len(self.router)
+
+
+class Router2Action(ContextConsumer):
+    """
+    Базовый абстрактный класс с роутигном для реализации обработки экшенов.
+    """
+    router = {
+        0: "apply_action_wait",
+        1: "apply_action_trade",
+    }
+
+    def __init__(self, alias):
+        super().__init__(alias)
+
+    def reset(self):
+        """Reset current action controller state"""
+        pass
+
+    def apply_action(self, action):
+        """The apply_action method applied action, calculating reward and open/close trade"""
+        return getattr(self, self.router[action])()
+
+    def apply_action_wait(self):
+        raise NotImplementedError
+
+    def apply_action_trade(self):
+        raise NotImplementedError
+
+    def apply_action_close(self):
+        raise NotImplementedError
+
+    def get_action_space(self):
+        return len(self.router)
