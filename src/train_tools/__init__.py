@@ -13,3 +13,5 @@ from .get_max_period import get_max_period
 from .telegram import TelegramSend
 
 
+from .train_manager import TrainManagerv2
+

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class DataPointFactory:
     """DataPointFactory из core v3 работает с периодом"""
-    def __init__(self, dataset, step_size=1, offset=10, observation_len=10, future_points=0, alias=None):
+    def __init__(self, dataset, step_size=1, offset=10, observation_len=10, future_points=0, alias="NotSpecified"):
         """
         Все параметры указываются в единицах, без привязки к шагу датасета
         :param dataset: pandas dataframe с данными
@@ -37,7 +37,6 @@ class DataPointFactory:
             self.data_period = self.indexes[1] - self.indexes[0]
             if step_size % self.data_period != 0:
                 raise Exception(f"Data period ({self.data_period}) is not multiplicity to Step size ({step_size}). Take another step size value")
-
         else:
             self.data_period = 1
 

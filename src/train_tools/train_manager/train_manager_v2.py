@@ -9,8 +9,10 @@ from ..telegram import TelegramSend
 
 class ResultsBuffer:
     """Хранит результаты обучения и позволяет доставать значения метрик в разрезе alias(name) """
-    def __init__(self):
+    def __init__(self, aliases=[]):
         self.data = {}
+        for alias in aliases:
+            self.data[alias] = []
 
     def save_stat(self, name, frame, score):
         if name not in self.data:
@@ -30,7 +32,7 @@ class ResultsBuffer:
         return self.data.keys()
 
 
-class TrainManager:
+class TrainManagerv2:
     # todo подумать над вынесением функций сохранения в отдельный класс
     """Позволяет итеративно запускать тренировку агента, контроллирует критерии остановки и организует проверку модели на тестовых данных"""
 
@@ -47,10 +49,13 @@ class TrainManager:
     ALIAS_TRAIN = "train"
     ALIAS_TEST = "test"
 
-    def __init__(self, agent, core, dpf, train_plot=None, alias="AliasTest", output_path=WORK_PATH):
+    def __init__(self, agent, core, dpfs, train_plot=None, alias="AliasTest", output_path=WORK_PATH):
         self.core = core
-        self.dpf = dpf
-        self.history = ResultsBuffer()
+        self.dpfs = dpfs
+
+        aliases = [dpf.alias for dpf in dpfs]
+        self.history = ResultsBuffer(aliases)
+
         self.train_plot = train_plot
         self.alias = alias
         self.agent = agent
@@ -114,11 +119,15 @@ class TrainManager:
 
             # Проверяем и сохраняем в результат на тестовых датасетах
             if frame % self.test_every == 0:
-                player = Player(self.core, self.agent.model, self.dpf)
-                score, play_log = player.play(render=False)
-                self.history.save_stat(self.ALIAS_TEST, frame, score)
-                if score.get("Balance", 0) > self.save_test_since:
-                    self.save_weights(self.agent.model, frame)
+                saved = False
+                for dpf in self.dpfs:
+                    player = Player(self.core, self.agent.model, dpf)
+                    score, play_log = player.play(render=False)
+                    self.history.save_stat(dpf.alias, frame, score)
+                    if not saved:
+                        if score.get("Balance", 0) > self.save_test_since:
+                            self.save_weights(self.agent.model, frame)
+                            saved = True
 
             # Сохраняем модель
             # aliases = self.history.get_aliases()
@@ -152,36 +161,6 @@ class TrainManager:
                         self.ts.send(f"Finished at frame {frame}")
                     break
 
-    def make_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
-        snapshot = {
-            "history": self.history,
-            "agent_config": self.agent.get_config(),
-            "weights_model": self.agent.model.get_weights(),
-            "weights_model_target": self.agent.model_target.get_weights()
-        }
-        self._save_file(self.TRAIN_RESULTS, name, snapshot)
-
-    def load_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
-        snapshot = self._load_file(self.TRAIN_RESULTS, name)
-        if snapshot is not None:
-            self.history = snapshot["history"]
-            self.agent.load_config(snapshot["agent_config"])
-            self.agent.model.set_weights(snapshot["weights_model"])
-            self.agent.model_target.set_weights(snapshot["weights_model_target"])
-            print(f"Снепшот успешно загружен на эпизоде {self.agent.episode_count}")
-
-    def get_model(self, frame):
-        """Создает новую модель из базовой и загружает в нее веса из указанного фрейма"""
-        model = tf.keras.models.load_model(self.model_path)
-        weights = self._load_file(self.TRAIN_RESULTS, frame)
-        if weights is not None:
-            model.set_weights(weights)
-        return model
-
-
-
-
-
     def get_path(self, *args):
         """Проверяет наличие директории и при необходимости ее создает"""
         path = os.path.join(self.path, self.WORK_DIR, self.alias, *list(map(str, args)))
@@ -211,13 +190,35 @@ class TrainManager:
             data = None
         return data
 
-
+    def get_model(self, frame):
+        """Создает новую модель из базовой и загружает в нее веса из указанного фрейма"""
+        model = tf.keras.models.load_model(self.model_path)
+        weights = self._load_file(self.TRAIN_RESULTS, frame)
+        if weights is not None:
+            model.set_weights(weights)
+        return model
 
     def save_weights(self, model, frame):
         weights = model.get_weights()
         self._save_file(self.TRAIN_RESULTS, frame, weights)
 
+    def make_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
+        snapshot = {
+            "history": self.history,
+            "agent_config": self.agent.get_config(),
+            "weights_model": self.agent.model.get_weights(),
+            "weights_model_target": self.agent.model_target.get_weights()
+        }
+        self._save_file(self.TRAIN_RESULTS, name, snapshot)
 
+    def load_snapshot(self, name=DEFAULT_SNAPSHOT_NAME):
+        snapshot = self._load_file(self.TRAIN_RESULTS, name)
+        if snapshot is not None:
+            self.history = snapshot["history"]
+            self.agent.load_config(snapshot["agent_config"])
+            self.agent.model.set_weights(snapshot["weights_model"])
+            self.agent.model_target.set_weights(snapshot["weights_model_target"])
+            print(f"Снепшот успешно загружен на эпизоде {self.agent.episode_count}")
 
     def drop_snapshots(self, name=ALIAS_TRAIN, threshold=0.09):
         frames, balances = self.history.get_data(name, "Balance")
