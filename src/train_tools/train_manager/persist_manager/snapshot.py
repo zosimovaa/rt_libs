@@ -1,74 +1,48 @@
 import time
-import uuid
 import pickle
-import tensorflow as tf
 
 from .providers.fs import FsDataProvider
 from .providers.db import DbDataProvider
 
 
-class ScorePersistManager(BasicFileManager):
+class SnapshotPersistManager:
     """Сохраняет результаты локально и в БД"""
 
-    TARGET_DIR = "scores"  # Директория для хранения удачных моделей
-    NAME_PREFIX = "score"
+    TARGET_DIR = "snapshots"  # Директория для хранения
+    NAME_PREFIX = "snapshot"
 
-    PUT_SCORE = "INSERT INTO scores VALUES"
-    GET_SCORE = "SELECT * from scores !WHERE! ORDER BY frame ASC"
-
-    PUT_WEIGHTS = "INSERT INTO weights VALUES"
-    GET_WEIGHTS = "SELECT * from weights !WHERE! ORDER BY frame ASC"
+    PUT = "INSERT INTO snapshots VALUES"
+    GET = "SELECT * from snapshots !WHERE!"
 
     def __init__(self, alias, path, db_conf):
-        super().__init__(alias, path)
-
+        self.alias = alias
         self.db_conf = db_conf
-        self.fs = FsDataProvider()
+        self.fs = FsDataProvider(alias, path, self.TARGET_DIR, self.NAME_PREFIX)
+        self.db = DbDataProvider(db_conf, self.GET, self.PUT)
 
-        self.db_score = DbDataProvider(db_conf, self.GET_SCORE, self.PUT_SCORE)
-        self.db_weights = DbDataProvider(db_conf, self.GET_WEIGHTS, self.PUT_WEIGHTS)
-
-    def save(self, dataset, frame, metrics, weights):
-        if self.db_conf in None:
-            path = self.get_path(self.TARGET_DIR)
-            name = self.NAME_PREFIX + str(frame)
-            self.fs.put(path, name, weights)
+    def save(self, frame, snapshot):
+        if self.db_conf is None:
+            self.fs.put(frame, snapshot)
         else:
-            weights_id = uuid.uuid4()
+            data = self._build_data(frame, snapshot)
+            self.db.put(data)
 
-            weights_data = self._build_weights(weights_id, frame, weights)
-            self.db_weights.put(weights_data)
-
-            score_data = self._build_score(weights_id, frame, weights)
-            self.db_score.put(score_data)
-
-    def get_weights(self, frame):
-        if self.db_conf in None:
-            path = self.get_path(self.TARGET_DIR)
-            name = self.NAME_PREFIX + str(frame)
-            weights = self.fs.get(path, name)
+    def read(self, frame):
+        if self.db_conf is None:
+            snapshot = self.fs.get(frame)
         else:
-            pass
+            condition = {"alias": self.alias, "frame": frame}
+            snapshot = self.db.get(**condition)
+            snapshot = pickle.loads(snapshot[-1][2])
+        return snapshot
 
-        return weights
-
-    def _build_weights(self, weights_id, frame, weights):
-        return [(
-            weights_id,
+    def _build_data(self, frame, snapshot):
+        data = [(
             self.alias,
             frame,
-            pickle.dumps(weights, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dumps(snapshot, protocol=pickle.HIGHEST_PROTOCOL),
+            int(time.time())
         )]
-
-    def _build_score(self, dataset, frame, metrics, weights_id):
-        return [(
-            self.alias,
-            dataset,
-            frame,
-            metrics,
-            weights_id,
-            int(time.time()),
-            ""
-        )]
+        return data
 
 
