@@ -20,8 +20,7 @@ class ScorePersistManager:
     GET_WEIGHTS = "SELECT * from weights !WHERE! ORDER BY frame ASC"
 
     def __init__(self, alias, path, db_conf):
-        super().__init__(alias, path)
-
+        self.alias = alias
         self.db_conf = db_conf
         self.fs = FsDataProvider(alias, path, self.TARGET_DIR, self.NAME_PREFIX)
         self.db_score = DbDataProvider(db_conf, self.GET_SCORE, self.PUT_SCORE)
@@ -31,7 +30,7 @@ class ScorePersistManager:
         if self.db_conf is None:
             self.fs.put(frame, weights)
         else:
-            weights_id = uuid.uuid4()
+            weights_id = str(uuid.uuid4())
 
             weights_data = self._build_weights(weights_id, frame, weights)
             self.db_weights.put(weights_data)
@@ -39,26 +38,27 @@ class ScorePersistManager:
             score_data = self._build_score(dataset, frame, metrics, weights_id)
             self.db_score.put(score_data)
 
-    def get_weights(self, frame):
-        if self.db_conf in None:
-            path = self.get_path(self.TARGET_DIR)
-            name = self.NAME_PREFIX + str(frame)
-            weights = self.fs.get(path, name)
+    def read(self, frame):
+        if self.db_conf is None:
+            weights = self.fs.get(frame)
         else:
-            pass
+            condition = {"alias": self.alias, "frame": frame}
+            weights = self.db_weights.get(**condition)
 
+            weights = pickle.loads(weights[-1][-1])
         return weights
 
     def _build_weights(self, weights_id, frame, weights):
-        return [(
+        data = [(
             weights_id,
             self.alias,
             frame,
             pickle.dumps(weights, protocol=pickle.HIGHEST_PROTOCOL)
         )]
+        return data
 
     def _build_score(self, dataset, frame, metrics, weights_id):
-        return [(
+        data = [(
             self.alias,
             dataset,
             frame,
@@ -67,5 +67,4 @@ class ScorePersistManager:
             int(time.time()),
             ""
         )]
-
-
+        return data
